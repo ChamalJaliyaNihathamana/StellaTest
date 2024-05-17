@@ -8,6 +8,7 @@ import { Box, CircularProgress, FormHelperText } from "@mui/material";
 import CustomTextArea from "@/client/components/CustomTextArea";
 import { celebrityStyleAnalysisPrompt } from "@/client/prompts/celebrityStyleAnalyzerPrompt";
 import { ChatRequestOptions, Message } from "ai";
+import { combineStylePrompt } from "@/client/prompts/combineStylePrompt.";
 
 interface CelebrityStyleProps {}
 
@@ -19,6 +20,7 @@ const CelebrityStyle: React.FunctionComponent<CelebrityStyleProps> = () => {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [llmOutputs, setLlmOutputs] = useState<string[]>([]);
 
   const handleSubmitWithLoading = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -26,25 +28,95 @@ const CelebrityStyle: React.FunctionComponent<CelebrityStyleProps> = () => {
     setError(null);
   
     try {
-      // Construct the prompt using the current input
-      const modifiedInput = celebrityStyleAnalysisPrompt(input); 
+      const apiEndpoints = ["/api/gemini",  "/api/openai" ,"/api/anthropic"];
+      const responses = await Promise.all(
+        apiEndpoints.map(async (endpoint) => {
+          const modifiedPrompt = celebrityStyleAnalysisPrompt(input);
+          const newMessage: Message = {
+            id: crypto.randomUUID(),
+            role: "user",
+            content: modifiedPrompt,
+          };
   
-      // Add the message with the modified prompt to the messages array
-      const newMessage: Message = {
-        id: crypto.randomUUID(),
-        role: "user",
-        content: modifiedInput,
-      };
+          const response = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ messages: [...messages, newMessage] }),
+          });
   
-      // Directly append to the messages array before submitting
-      messages.push(newMessage);
+          if (!response.ok) {
+            throw new Error(`Request to ${endpoint} failed`);
+          }
   
-      // Submit with the updated messages
-      await handleSubmit(e); 
+          const reader = response.body?.getReader();
+          if (!reader) throw new Error("No response body");
+  
+          const decoder = new TextDecoder();
+          let output = "";
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            output += decoder.decode(value, { stream: true });
+          }
+          output = output.replace(/\\n\d+:/g, ''); 
+
+          return output; // Return the cleaned output
+        })
+      );
+  
+      setLlmOutputs(responses); // Set all outputs to state
+      console.log(responses)
+      await combineAndSubmitToOpenAI(input, responses);
+  
     } catch (err: any) {
       setError(err.message || "Something went wrong");
     } finally {
       setLoading(false);
+    }
+  };
+
+
+  const combineAndSubmitToOpenAI = async (celebrityName: string, outputs: string[]) => {
+    const combinedPrompt = combineStylePrompt(celebrityName, outputs);
+
+    try {
+
+      const newMessage: Message = {
+        id: crypto.randomUUID(),
+        role: "user",
+        content: combinedPrompt,
+      };
+
+
+      const response = await fetch("/api/gemini", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: [...messages, newMessage] }),
+      });
+
+      if (!response.ok) {
+        throw new Error("OpenAI request failed");
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error("No response body");
+
+      const decoder = new TextDecoder();
+      let aiResponse = "";
+
+      // while (true) {
+      //   const { done, value } = await reader.read();
+      //   if (done) break;
+
+      //   const chunk = decoder.decode(value, { stream: true });
+      //   aiResponse += chunk;
+      //   setAiResponse(aiResponse);
+      // }
+
+      // Update messages with the combined response
+      // await handleSubmit(e);
+    } catch (err: any) {
+      setError(err.message || "Something went wrong");
     }
   };
   return (
