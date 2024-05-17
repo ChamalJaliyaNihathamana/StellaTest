@@ -28,7 +28,7 @@ const CelebrityStyle: React.FunctionComponent<CelebrityStyleProps> = () => {
     setError(null);
   
     try {
-      const apiEndpoints = ["/api/gemini",  "/api/openai" ,"/api/anthropic"];
+      const apiEndpoints = ["/api/gemini",  "/api/anthropic"];
       const responses = await Promise.all(
         apiEndpoints.map(async (endpoint) => {
           const modifiedPrompt = celebrityStyleAnalysisPrompt(input);
