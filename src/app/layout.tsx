@@ -1,23 +1,19 @@
-"use client"
 import Navbar from "@/client/components/Navbar";
+import StoreProvider from "./StoreProvider";
 
-import { Provider } from "react-redux";
-import { makeStore } from "@/lib/store";
 
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-
-  const store = makeStore();
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
-        <Provider store={store}>
+        <StoreProvider> {/* Use your custom StoreProvider */}
           <Navbar />
           {children}
-        </Provider>
+        </StoreProvider>
       </body>
     </html>
   );

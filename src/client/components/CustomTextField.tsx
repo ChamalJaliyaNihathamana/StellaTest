@@ -29,6 +29,7 @@ interface CustomTextFieldProps {
   value?: string;
   placeholder?: string;
   onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onClick?: (event: React.MouseEvent<HTMLInputElement>) => void;
   onFocus?: (event: React.FocusEvent<HTMLInputElement>) => void;
   readOnly?: boolean;
   // Add more props as needed (e.g., error, helperText, variant, etc.)
@@ -38,6 +39,7 @@ const CustomTextField: React.FC<CustomTextFieldProps> = ({
   label,
   value,
   onChange,
+  onClick,
   placeholder,
   readOnly = false,
   onFocus,
@@ -48,6 +50,7 @@ const CustomTextField: React.FC<CustomTextFieldProps> = ({
       label={label}
       value={value}
       onChange={onChange}
+      onClick={onClick}
       onFocus={onFocus}
       placeholder={placeholder}
       inputProps={{ readOnly: readOnly ,'aria-readonly': readOnly }}

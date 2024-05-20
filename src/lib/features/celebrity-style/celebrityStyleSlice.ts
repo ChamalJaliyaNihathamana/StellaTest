@@ -28,7 +28,7 @@ export const celebrityStyleSlice = createSlice({
       state.error = action.payload;
     },
     setAnalysisResults: (state, action: PayloadAction<string>) => {
-      state.analysisResults = action.payload;
+        state.analysisResults = action.payload.replace(/0:"|\s+/g, " ");
     },
   },
 });

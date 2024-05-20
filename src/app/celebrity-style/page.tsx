@@ -1,8 +1,22 @@
+// celebrity-style/page.tsx
 "use client";
 import { useChat } from "ai/react";
 import { useState } from "react";
+// redux
 import { useSelector, useDispatch } from "react-redux";
-
+import { AppDispatch, RootState } from "@/lib/store";
+import {
+  setAnalysisResults,
+  setCelebrityName,
+  setError,
+  setLoading,
+} from "@/lib/features/celebrity-style/celebrityStyleSlice";
+// modals
+import { ChatRequestOptions, Message } from "ai";
+// utils
+import { combineStylePrompt } from "@/client/prompts/combineStylePrompt.";
+import { celebrityStyleAnalysisPrompt } from "@/client/prompts/celebrityStyleAnalyzerPrompt";
+// ui
 import CustomButton from "@/client/components/CustomButton";
 import CustomTextField from "@/client/components/CustomTextField";
 import {
@@ -12,16 +26,6 @@ import {
   FormHelperText,
 } from "@mui/material";
 import CustomTextArea from "@/client/components/CustomTextArea";
-import { celebrityStyleAnalysisPrompt } from "@/client/prompts/celebrityStyleAnalyzerPrompt";
-import { ChatRequestOptions, Message } from "ai";
-import { combineStylePrompt } from "@/client/prompts/combineStylePrompt.";
-import { AppDispatch, RootState } from "@/lib/store";
-import {
-  setAnalysisResults,
-  setCelebrityName,
-  setError,
-  setLoading,
-} from "@/lib/features/celebrity-style/celebrityStyleSlice";
 
 interface CelebrityStyleProps {}
 
@@ -140,7 +144,7 @@ const CelebrityStyle: React.FunctionComponent<CelebrityStyleProps> = () => {
                   label={"Celebrity Name"}
                   value={celebrityName} // Use input from useChat
                   readOnly={true}
-                  onFocus={() => setShowInput(false)}
+                  onClick={() => setShowInput(true)}
                 />
               </div>
             )}
@@ -151,10 +155,6 @@ const CelebrityStyle: React.FunctionComponent<CelebrityStyleProps> = () => {
                 <CustomButton type="submit" disabled={isLoading}>
                   {isLoading ? "Generating..." : "Generate"}
                 </CustomButton>
-
-                {/* <CustomButton onClick={() => setShowInput(true)}>
-                  Change Celebrity
-                </CustomButton> */}
               </ButtonGroup>
             )}
             {error && <FormHelperText>{error}</FormHelperText>}
