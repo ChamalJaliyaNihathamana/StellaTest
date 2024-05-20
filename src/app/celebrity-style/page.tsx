@@ -1,34 +1,53 @@
 "use client";
 import { useChat } from "ai/react";
 import { useState } from "react";
+import { useSelector, useDispatch } from "react-redux";
 
 import CustomButton from "@/client/components/CustomButton";
 import CustomTextField from "@/client/components/CustomTextField";
-import { Box, CircularProgress, FormHelperText } from "@mui/material";
+import {
+  Box,
+  ButtonGroup,
+  CircularProgress,
+  FormHelperText,
+} from "@mui/material";
 import CustomTextArea from "@/client/components/CustomTextArea";
 import { celebrityStyleAnalysisPrompt } from "@/client/prompts/celebrityStyleAnalyzerPrompt";
 import { ChatRequestOptions, Message } from "ai";
 import { combineStylePrompt } from "@/client/prompts/combineStylePrompt.";
+import { AppDispatch, RootState } from "@/lib/store";
+import {
+  setAnalysisResults,
+  setCelebrityName,
+  setError,
+  setLoading,
+} from "@/lib/features/celebrity-style/celebrityStyleSlice";
 
 interface CelebrityStyleProps {}
 
-
 const CelebrityStyle: React.FunctionComponent<CelebrityStyleProps> = () => {
+  const dispatch = useDispatch<AppDispatch>();
+  const { celebrityName, isLoading, error, analysisResults } = useSelector(
+    (state: RootState) => state.celebrityStyle
+  );
+
   const { messages, input, handleInputChange, handleSubmit } = useChat({
     api: "/api/gemini",
   });
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [llmOutputs, setLlmOutputs] = useState<string[]>([]);
+  const [showInput, setShowInput] = useState(true);
 
-  const handleSubmitWithLoading = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmitWithLoading = async (
+    e: React.FormEvent<HTMLFormElement>
+  ) => {
     e.preventDefault();
-    setLoading(true);
-    setError(null);
-  
+    dispatch(setLoading(true));
+    dispatch(setError(null));
+    dispatch(setCelebrityName(input));
+    setShowInput(false);
+
     try {
-      const apiEndpoints = ["/api/gemini",  "/api/anthropic" , "/api/openai"];
+      const apiEndpoints = ["/api/gemini", "/api/anthropic", "/api/openai"];
       const responses = await Promise.all(
         apiEndpoints.map(async (endpoint) => {
           const modifiedPrompt = celebrityStyleAnalysisPrompt(input);
@@ -37,20 +56,20 @@ const CelebrityStyle: React.FunctionComponent<CelebrityStyleProps> = () => {
             role: "user",
             content: modifiedPrompt,
           };
-  
+
           const response = await fetch(endpoint, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ messages: [...messages, newMessage] }),
           });
-  
+
           if (!response.ok) {
             throw new Error(`Request to ${endpoint} failed`);
           }
-  
+
           const reader = response.body?.getReader();
           if (!reader) throw new Error("No response body");
-  
+
           const decoder = new TextDecoder();
           let output = "";
           while (true) {
@@ -58,67 +77,35 @@ const CelebrityStyle: React.FunctionComponent<CelebrityStyleProps> = () => {
             if (done) break;
             output += decoder.decode(value, { stream: true });
           }
-          output = output.replace(/\\n\d+:/g, ''); 
+          output = output.replace(/\\n\d+:/g, "");
 
           return output; // Return the cleaned output
         })
       );
-  
-      setLlmOutputs(responses); // Set all outputs to state
-      console.log(responses)
-      await combineAndSubmitToOpenAI(input, responses);
-  
-    } catch (err: any) {
-      setError(err.message || "Something went wrong");
-    } finally {
-      setLoading(false);
-    }
-  };
 
-
-  const combineAndSubmitToOpenAI = async (celebrityName: string, outputs: string[]) => {
-    const combinedPrompt = combineStylePrompt(celebrityName, outputs);
-
-    try {
-
-      const newMessage: Message = {
+      console.log(responses);
+      const combinedPrompt = combineStylePrompt(input, responses);
+      const newCombinedMessage: Message = {
         id: crypto.randomUUID(),
         role: "user",
         content: combinedPrompt,
       };
 
-
-      const response = await fetch("/api/gemini", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: [...messages, newMessage] }),
+      handleSubmit(e, {
+        options: {
+          body: { messages: [...messages, newCombinedMessage] }, // Pass combined messages directly
+        },
       });
 
-      if (!response.ok) {
-        throw new Error("OpenAI request failed");
-      }
-
-      const reader = response.body?.getReader();
-      if (!reader) throw new Error("No response body");
-
-      const decoder = new TextDecoder();
-      let aiResponse = "";
-
-      // while (true) {
-      //   const { done, value } = await reader.read();
-      //   if (done) break;
-
-      //   const chunk = decoder.decode(value, { stream: true });
-      //   aiResponse += chunk;
-      //   setAiResponse(aiResponse);
-      // }
-
-      // Update messages with the combined response
-      // await handleSubmit(e);
+      dispatch(setAnalysisResults(responses.join("\n\n")));
+      dispatch(setLoading(false));
     } catch (err: any) {
-      setError(err.message || "Something went wrong");
+      dispatch(setError(err.message || "Something went wrong"));
+    } finally {
+      dispatch(setLoading(false));
     }
   };
+
   return (
     <Box>
       <h3 className="pt-20">Celebrity Style Analyzer</h3>{" "}
@@ -140,18 +127,35 @@ const CelebrityStyle: React.FunctionComponent<CelebrityStyleProps> = () => {
           onSubmit={handleSubmitWithLoading}
         >
           <div>
-            <CustomTextField
-              label={"Celebrity Name"}
-              placeholder="Enter celebrity name"
-              value={input}
-              onChange={handleInputChange}
-            />
-            {loading ? (
+            {showInput ? (
+              <CustomTextField
+                label={"Celebrity Name"}
+                placeholder="Enter celebrity name"
+                value={input} // Use input from useChat
+                onChange={handleInputChange}
+              />
+            ) : (
+              <div>
+                <CustomTextField
+                  label={"Celebrity Name"}
+                  value={celebrityName} // Use input from useChat
+                  readOnly={true}
+                  onFocus={() => setShowInput(false)}
+                />
+              </div>
+            )}
+            {isLoading ? (
               <CircularProgress />
             ) : (
-              <CustomButton type="submit" disabled={loading}>
-                {loading ? "Generating..." : "Generate"}
-              </CustomButton>
+              <ButtonGroup>
+                <CustomButton type="submit" disabled={isLoading}>
+                  {isLoading ? "Generating..." : "Generate"}
+                </CustomButton>
+
+                {/* <CustomButton onClick={() => setShowInput(true)}>
+                  Change Celebrity
+                </CustomButton> */}
+              </ButtonGroup>
             )}
             {error && <FormHelperText>{error}</FormHelperText>}
             {messages

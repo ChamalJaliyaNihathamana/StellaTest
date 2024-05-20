@@ -1,11 +1,23 @@
+"use client"
 import Navbar from "@/client/components/Navbar";
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+import { Provider } from "react-redux";
+import { makeStore } from "@/lib/store";
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+
+  const store = makeStore();
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
-      <Navbar />
-        {children} 
+        <Provider store={store}>
+          <Navbar />
+          {children}
+        </Provider>
       </body>
     </html>
   );
