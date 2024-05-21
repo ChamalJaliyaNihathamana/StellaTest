@@ -1,13 +1,15 @@
 "use client";
-import { useChat } from "ai/react";
 // redux
 import { useSelector, useDispatch } from "react-redux";
 import { AppDispatch, RootState } from "@/lib/store";
+import { setProfession } from "@/lib/features/user-profile/userProfileSlice";
 // utils
+// ui
 import CustomButton from "@/client/components/CustomButton";
 import CustomTextArea from "@/client/components/CustomTextArea";
 import CustomTextField from "@/client/components/CustomTextField";
 import { Box } from "@mui/material";
+import { useChatContext } from "@/client/components/chatProvider";
 
 interface CapsuleProfessionProps {}
 
@@ -19,14 +21,17 @@ const CapsuleProfession: React.FunctionComponent<
   const { celebrityName, isLoading, error, analysisResults } = useSelector(
     (state: RootState) => state.celebrityStyle
   );
-  const {existingWardrobe } = useSelector(
+  const {existingWardrobe ,profession} = useSelector(
     (state: RootState) => state.userProfile
   );
 
-  const { messages, input, handleInputChange, handleSubmit } = useChat({
-    api: "/api/gemini",
-  });
+  const { messages, input, handleInputChange, handleSubmit } = useChatContext();
   
+
+  const handleProfessionInputBlur = (event: React.FocusEvent<HTMLInputElement>) => {
+    dispatch(setProfession(event.target.value));
+};
+
   return (
     <Box>
       <h3 className="pt-20">Capsule for Profession X</h3>
@@ -58,6 +63,8 @@ const CapsuleProfession: React.FunctionComponent<
             <CustomTextField
               label={"Profession"}
               placeholder="Enter profession name"
+              onBlur={handleProfessionInputBlur}
+              defaultValue={profession}
             />
               <CustomTextField
               label={"Celebrity Name"}

@@ -34,6 +34,7 @@ const StyledTextarea = styled(TextareaAutosize)(({ theme }) => ({
 
 interface CustomTextAreaProps {
   label: string;
+  defaultValue?: string;
   showLabel?: boolean;
   value?: string;
   placeholder?: string;
@@ -49,6 +50,7 @@ const CustomTextArea: React.FC<CustomTextAreaProps & { sx?: SxProps }> = ({
   rows = 10,
   maxRows,
   showLabel = true,
+  defaultValue,
   sx,
   ...rest
 }) => {
@@ -90,6 +92,7 @@ const CustomTextArea: React.FC<CustomTextAreaProps & { sx?: SxProps }> = ({
       <StyledTextarea
         id="custom-textarea"
         aria-label={label}
+        defaultValue={defaultValue}
         value={value}
         onChange={(e) => {
           setHasValue(!!e.target.value);

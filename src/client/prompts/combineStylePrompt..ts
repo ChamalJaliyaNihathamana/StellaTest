@@ -1,30 +1,34 @@
 // /api/utils.ts
 
-export const combineStylePrompt = (celebrityName: string, LLMOutputs: string[]): string => {
-  // Clean the LLM Outputs
-  const cleanedLLMOutputs = LLMOutputs.map(output => 
+export const combineStylePrompt = (
+  celebrityName: string,
+  LLMOutputs: (string | { choices: { message: { content: string } }[] })[] // Union type for responses
+): string => {
+  // 1. Extract and Clean LLM Outputs
+  const cleanedLLMOutputs = LLMOutputs.map((output) => {
+    if (typeof output === "string") {
+      return output; // If it's already a string, no change needed
+    } else if (output.hasOwnProperty("choices")) {
+      return output.choices[0].message.content; // Extract content from the object
+    } else {
+      throw new Error("Invalid LLM output format"); // Handle unexpected format
+    }
+  }).map(output => 
     output
-      .replace(/\\n/g, ' ')      // Remove newline characters
-      .replace(/^0:/gm, '')      // Remove index markers (e.g., "0:")
-      .replace(/\s+/g, ' ')      // Replace multiple spaces with single spaces
-      .replace(/\.+/g, '.')      // Replace multiple periods with a single period
+      .replace(/\\n/g, ' ')       // Remove newline characters
+      .replace(/^(\d+:|\*|-)/gm, '') // Remove list markers (e.g., "1:", "-", "*")
+      .replace(/\s+/g, ' ')       // Replace multiple spaces with single spaces
+      .replace(/\.+/g, '.')       // Replace multiple periods with a single period
       .replace(/,\s*,/g, ',')    // Remove extra commas
-      .replace(/#+/g, '')        // Remove hash symbols
-      .replace(/\*+/g, '')       // Remove asterisks 
-      .replace(/-+/g, '')        // Remove hyphens
-      .replace(/\(\)/g, '')      // Remove empty parentheses
-      .replace(/"/g, '')         // Remove double quotes
+      .replace(/["#]/g, '')      // Remove quotes and hash symbols
+      .replace(/(\w+)-(\w+)/g, '$1$2') // Merge hyphenated words
   );
 
-  // Merge incomplete words 
-  const mergedLLMOutputs = cleanedLLMOutputs.map(output => 
-    output.replace(/(\w+)-(\w+)/g, '$1$2') // Merge hyphenated words
-  );
 
-  // Create a string for the cleaned and merged LLM outputs
-  const llmOutputString = mergedLLMOutputs
+  // 2. Construct LLM Output String for Prompt
+  const llmOutputString = cleanedLLMOutputs
     .map((output, index) => `LLM Model ${index + 1}: ${output.trim()}`)
-    .join('\n\n'); 
+    .join('\n\n');
 
   return `Your assignment is to combine the following LLM outputs into a single combined output that includes unique information from each original LLM output. Generate a final combined output in our corporate style and tone by following the template and leveraging information you learn from the ${LLMOutputs.length} LLM model outputs provided. Detail is important for this assignment.
 

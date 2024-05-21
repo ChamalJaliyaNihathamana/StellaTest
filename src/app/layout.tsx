@@ -1,5 +1,6 @@
 import Navbar from "@/client/components/Navbar";
 import StoreProvider from "./StoreProvider";
+import { ChatProvider } from "@/client/components/chatProvider";
 
 
 export default function RootLayout({
@@ -12,7 +13,7 @@ export default function RootLayout({
       <body>
         <StoreProvider> {/* Use your custom StoreProvider */}
           <Navbar />
-          {children}
+          <ChatProvider api="/api/gemini">{children}</ChatProvider>
         </StoreProvider>
       </body>
     </html>

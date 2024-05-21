@@ -22,6 +22,7 @@ import {
 } from "@/lib/features/user-profile/userProfileSlice";
 import { dressLikeCelebPrompt } from "@/client/prompts/dressLikeCelebPrompt";
 import { Message } from "ai";
+import { useChatContext } from "@/client/components/chatProvider";
 
 interface DressLikeCelebProps {}
 
@@ -34,11 +35,9 @@ const DressLikeCeleb: React.FunctionComponent<DressLikeCelebProps> = () => {
     (state: RootState) => state.userProfile
   );
 
-  const { messages, handleSubmit } = useChat({
-    api: "/api/gemini",
-  });
+  const { messages:dressLikeMessages, handleSubmit:dressLikeHandleSubmit } = useChatContext();
 
-  const handleSubmitWithLoading = async (
+  const handleSubmitDressLike = async (
     e: React.FormEvent<HTMLFormElement>
   ) => {
     e.preventDefault();
@@ -47,6 +46,7 @@ const DressLikeCeleb: React.FunctionComponent<DressLikeCelebProps> = () => {
     dispatch(setError(null));
 
     try {
+      console.log("inside try")
       // Construct the prompt using the current input
       const modifiedInput = dressLikeCelebPrompt(
         celebrityName,
@@ -58,9 +58,10 @@ const DressLikeCeleb: React.FunctionComponent<DressLikeCelebProps> = () => {
         role: "user",
         content: modifiedInput,
       };
-      handleSubmit(e, {
+      console.log(newCombinedMessage)
+      dressLikeHandleSubmit("dress-like-celeb-chat",e, {
         options: {
-          body: { messages: [...messages, newCombinedMessage] }, // Pass combined messages directly
+          body: { messages: [...dressLikeMessages, newCombinedMessage] }, // Pass combined messages directly
         },
       });
    
@@ -89,7 +90,7 @@ const DressLikeCeleb: React.FunctionComponent<DressLikeCelebProps> = () => {
           }}
           noValidate
           autoComplete="off"
-          onSubmit={handleSubmitWithLoading}
+          onSubmit={handleSubmitDressLike}
         >
           <div>
             <CustomTextField
@@ -125,7 +126,7 @@ const DressLikeCeleb: React.FunctionComponent<DressLikeCelebProps> = () => {
               </ButtonGroup>
             )}
             {error && <FormHelperText>{error}</FormHelperText>}
-            {messages
+            {dressLikeMessages
               .filter((m) => m.role === "assistant") // Filter only AI messages
               .map((m) => (
                 <CustomTextArea

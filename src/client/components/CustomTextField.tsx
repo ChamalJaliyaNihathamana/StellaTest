@@ -29,9 +29,11 @@ interface CustomTextFieldProps {
   value?: string;
   placeholder?: string;
   onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onBlur?: (event: React.FocusEvent<HTMLInputElement>) => void;
   onClick?: (event: React.MouseEvent<HTMLInputElement>) => void;
   onFocus?: (event: React.FocusEvent<HTMLInputElement>) => void;
   readOnly?: boolean;
+  defaultValue?: string;
   // Add more props as needed (e.g., error, helperText, variant, etc.)
 }
 
@@ -43,6 +45,8 @@ const CustomTextField: React.FC<CustomTextFieldProps> = ({
   placeholder,
   readOnly = false,
   onFocus,
+  onBlur,
+  defaultValue,
   ...rest
 }) => {
   return (
@@ -52,6 +56,8 @@ const CustomTextField: React.FC<CustomTextFieldProps> = ({
       onChange={onChange}
       onClick={onClick}
       onFocus={onFocus}
+      onBlur={onBlur}
+      defaultValue={defaultValue}
       placeholder={placeholder}
       inputProps={{ readOnly: readOnly ,'aria-readonly': readOnly }}
       {...rest} // Pass any other props directly to the underlying TextField
