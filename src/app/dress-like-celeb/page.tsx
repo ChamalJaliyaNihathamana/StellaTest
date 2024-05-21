@@ -59,7 +59,7 @@ const DressLikeCeleb: React.FunctionComponent<DressLikeCelebProps> = () => {
         content: modifiedInput,
       };
       console.log(newCombinedMessage)
-      dressLikeHandleSubmit("dress-like-celeb-chat",e, {
+      dressLikeHandleSubmit(e, {
         options: {
           body: { messages: [...dressLikeMessages, newCombinedMessage] }, // Pass combined messages directly
         },

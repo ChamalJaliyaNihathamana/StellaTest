@@ -157,7 +157,7 @@ const CelebrityStyle: React.FunctionComponent<CelebrityStyleProps> = () => {
         content: combinedPrompt,
       };
 
-      handleSubmit("celebrity-style-chat",e, {
+      handleSubmit(e, {
         options: {
           body: { messages: [...messages, newCombinedMessage] },
         },

@@ -1,3 +1,4 @@
+// chatProvider.tsx
 "use client";
 import {
   createContext,
@@ -6,27 +7,20 @@ import {
   useEffect,
   FormEvent,
 } from "react";
-import { useChat } from "ai/react";
-import { ChatRequestOptions, Message } from "ai";
-
-interface ChatMessage extends Message {
-  chatId: string; // Add chatId to identify the chat
-}
+import { useChat, Message } from "ai/react"; // Adjust import if needed
+import { ChatRequestOptions } from "ai";
 
 interface ChatContextValue {
-  messages: ChatMessage[];
-  currentChatId: string | null;
+  messages: Message[];
   input: string;
   handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleSubmit: (
-    chatId: string,
     e: FormEvent<HTMLFormElement>,
     options?: ChatRequestOptions
   ) => Promise<void>;
   isLoading: boolean;
   error: string | null;
-  setCurrentChatId: React.Dispatch<React.SetStateAction<string | null>>;
-  clearMessages: (chatId: string) => void;
+  setMessages: React.Dispatch<React.SetStateAction<Message[]>>; // Add setMessages to context
 }
 
 const ChatContext = createContext<ChatContextValue | undefined>(undefined);
@@ -39,6 +33,7 @@ export function useChatContext() {
   return context;
 }
 
+// ChatProvider Component
 export function ChatProvider({
   children,
   api,
@@ -46,67 +41,52 @@ export function ChatProvider({
   children: React.ReactNode;
   api: string;
 }) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [currentChatId, setCurrentChatId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]); // State to hold messages
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { input, handleInputChange, handleSubmit: originalHandleSubmit } = useChat(
-    {
-      api,
-      onFinish: (message: Message) => {
-        // Add chatId to the message before storing
-        const newMessage: ChatMessage = { ...message, chatId: currentChatId! }; 
-        setMessages((prevMessages) => [...prevMessages, newMessage]);
-        setIsLoading(false);
-      },
-      onError: (error) => {
-        setError(error.message);
-        setIsLoading(false);
-      },
-    }
-  );
+  const {
+    input,
+    handleInputChange,
+    handleSubmit: originalHandleSubmit,
+  } = useChat({
+    api,
+    onFinish: (message) => {
+      // Update the messages array in the context
+      setMessages((prevMessages) => [...prevMessages, message]);
+      setIsLoading(false);
+    },
+    onError: (error) => {
+      setError(error.message);
+      setIsLoading(false);
+    },
+  }); // Wrap handleSubmit to match the expected type
 
-  const handleSubmit: ChatContextValue["handleSubmit"] = async (
-    chatId,
-    e,
-    options
-  ) => {
+  const handleSubmit: ChatContextValue["handleSubmit"] = async (e, options) => {
     try {
-      setIsLoading(true);
-      setCurrentChatId(chatId); // Set the current chat ID
+      setIsLoading(true); // Set loading state to true
       await originalHandleSubmit(e, options);
     } catch (err: any) {
       setError(err.message || "Something went wrong");
-      console.error("Error in handleSubmit:", err);
+      console.error("Error in handleSubmit:", err); // Log the error for debugging
     } finally {
-      setIsLoading(false);
+      setIsLoading(false); // Always reset loading state
     }
   };
-
-  const clearMessages = (chatId: string) => {
-    setMessages((prevMessages) =>
-      prevMessages.filter((m) => m.chatId !== chatId)
-    );
-  };
-
-  const filteredMessages = messages.filter((m) => m.chatId === currentChatId); // Filter messages for the current chat
 
   return (
     <ChatContext.Provider
       value={{
-        messages: filteredMessages, 
-        currentChatId,
-        setCurrentChatId,
+        messages,
+        setMessages,
         input,
         handleInputChange,
         handleSubmit,
         isLoading,
         error,
-        clearMessages,
       }}
     >
-      {children}
+       {children}
     </ChatContext.Provider>
   );
 }
