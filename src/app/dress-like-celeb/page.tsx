@@ -1,6 +1,7 @@
 // dress-like-celeb/page.tsx
 "use client";
 import { useChat } from "ai/react";
+import { useChatContext } from "@/client/components/chatProvider";
 
 // redux
 import { useSelector, useDispatch } from "react-redux";
@@ -22,7 +23,6 @@ import {
 } from "@/lib/features/user-profile/userProfileSlice";
 import { dressLikeCelebPrompt } from "@/client/prompts/dressLikeCelebPrompt";
 import { Message } from "ai";
-import { useChatContext } from "@/client/components/chatProvider";
 
 interface DressLikeCelebProps {}
 
@@ -47,7 +47,7 @@ const DressLikeCeleb: React.FunctionComponent<DressLikeCelebProps> = () => {
 
     try {
       console.log("inside try")
-      // Construct the prompt using the current input
+     
       const modifiedInput = dressLikeCelebPrompt(
         celebrityName,
         analysisResults,
@@ -61,7 +61,7 @@ const DressLikeCeleb: React.FunctionComponent<DressLikeCelebProps> = () => {
       console.log(newCombinedMessage)
       dressLikeHandleSubmit(e, {
         options: {
-          body: { messages: [...dressLikeMessages, newCombinedMessage] }, // Pass combined messages directly
+          body: { messages: [...dressLikeMessages, newCombinedMessage] }, 
         },
       });
    

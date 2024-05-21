@@ -93,9 +93,9 @@ const CelebrityStyle: React.FunctionComponent<CelebrityStyleProps> = () => {
             output += decoder.decode(value, { stream: true });
           }
 
-          // ----- Cleanup & Parsing (Refactored into Helper Functions) -----
+          // clean up
           output = cleanupResponse(endpoint, output);
-          let content = parseJsonResponse(output) || output; // Default to raw if parsing fails
+          let content = parseJsonResponse(output) || output; 
 
           if (content.trim()) {
             console.log(`${name} Response:\n${content.trim()}`);
@@ -155,13 +155,13 @@ const CelebrityStyle: React.FunctionComponent<CelebrityStyleProps> = () => {
                 placeholder="Enter celebrity name"
                 value={input}
                 onChange={handleInputChange}
-                defaultValue={celebrityName}
+              
               />
             ) : (
               <div>
                 <CustomTextField
                   label={"Celebrity Name"}
-                  value={celebrityName} // Use input from useChat
+                  value={celebrityName} 
                   readOnly={true}
                   onClick={() => setShowInput(true)}
                 />
@@ -178,11 +178,11 @@ const CelebrityStyle: React.FunctionComponent<CelebrityStyleProps> = () => {
             )}
             {error && <FormHelperText>{error}</FormHelperText>}
             {messages
-              .filter((m) => m.role === "assistant") // Filter only AI messages
+              .filter((m) => m.role === "assistant") // filter only AI messages
               .map((m) => (
                 <CustomTextArea
                   showLabel={false}
-                  defaultValue={analysisResults}
+                  // defaultValue={analysisResults}
                   key={m.id}
                   label="AI Response"
                   value={m.content}

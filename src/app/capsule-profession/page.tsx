@@ -1,4 +1,5 @@
 "use client";
+import { useChatContext } from "@/client/components/chatProvider";
 // redux
 import { useSelector, useDispatch } from "react-redux";
 import { AppDispatch, RootState } from "@/lib/store";
@@ -9,7 +10,6 @@ import CustomButton from "@/client/components/CustomButton";
 import CustomTextArea from "@/client/components/CustomTextArea";
 import CustomTextField from "@/client/components/CustomTextField";
 import { Box } from "@mui/material";
-import { useChatContext } from "@/client/components/chatProvider";
 
 interface CapsuleProfessionProps {}
 
@@ -18,7 +18,7 @@ const CapsuleProfession: React.FunctionComponent<
 > = () => {
 
   const dispatch = useDispatch<AppDispatch>();
-  const { celebrityName, isLoading, error, analysisResults } = useSelector(
+  const { celebrityName,  analysisResults } = useSelector(
     (state: RootState) => state.celebrityStyle
   );
   const {existingWardrobe ,profession} = useSelector(
@@ -54,7 +54,7 @@ const CapsuleProfession: React.FunctionComponent<
               m: 1,
               width: "calc(100% - 16px)",
             },
-            "& .MuiButton-root": { m: 1, width: "auto" }, // Auto-width for button
+            "& .MuiButton-root": { m: 1, width: "auto" }, 
           }}
           noValidate
           autoComplete="off"

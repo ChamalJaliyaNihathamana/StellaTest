@@ -19,17 +19,13 @@ export async function POST(req: Request) {
       apiKey: apiKey,
     });
 
-    // 1. Call the Anthropic API
     const response = await anthropic.messages.stream({
       model: 'claude-3-opus-20240229', 
       messages: formattedMessages,
       max_tokens: 1024,
-    }); // Note: No stream: true here
+    }); 
 
-    // 2. Use AnthropicStream to convert the response
-    const stream = AnthropicStream(response); // Use AnthropicStream directly
-
-    // 3. Return the StreamingTextResponse
+    const stream = AnthropicStream(response); 
     return new StreamingTextResponse(stream); 
   } catch (error) {
     console.error('Anthropic Error:', error);

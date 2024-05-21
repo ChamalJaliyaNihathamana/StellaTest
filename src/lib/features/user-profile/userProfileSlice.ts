@@ -1,3 +1,4 @@
+// user-profile/userProfileSlice.ts
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 interface UserProfileState {
@@ -151,31 +152,12 @@ export const userProfileSlice = createSlice({
   name: "userProfile",
   initialState,
   reducers: {
-    // Setters for wardrobe and profession (replace existing data)
     setExistingWardrobe: (state, action: PayloadAction<string>) => {
       state.existingWardrobe = action.payload;
     },
     setProfession: (state, action: PayloadAction<string>) => {
       state.profession = action.payload;
     },
-
-    // Actions for adding/removing individual items from the wardrobe (string)
-    addWardrobeItem: (state, action: PayloadAction<string>) => {
-      // Append the new item to the existing string with a comma separator
-      if (state.existingWardrobe) {
-        state.existingWardrobe += `, ${action.payload}`;
-      } else {
-        state.existingWardrobe = action.payload;
-      }
-    },
-    removeWardrobeItem: (state, action: PayloadAction<string>) => {
-      // Split the string into an array, remove the item, then join it back
-      const items = state.existingWardrobe.split(", ");
-      const updatedItems = items.filter((item) => item !== action.payload);
-      state.existingWardrobe = updatedItems.join(", ");
-    },
-
-    // For loading and error handling (optional but recommended)
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.isLoading = action.payload;
     },
@@ -185,12 +167,9 @@ export const userProfileSlice = createSlice({
   },
 });
 
-// Export the actions and the reducer
 export const {
   setExistingWardrobe,
   setProfession,
-  addWardrobeItem,
-  removeWardrobeItem,
   setLoading,
   setError,
 } = userProfileSlice.actions;

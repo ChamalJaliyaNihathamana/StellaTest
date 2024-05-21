@@ -1,6 +1,7 @@
+// lib/store.ts
 import { configureStore } from '@reduxjs/toolkit';
-import storage from 'redux-persist/lib/storage'; // Use localStorage
-import { combineReducers } from 'redux'; // Added for combining reducers
+import storage from 'redux-persist/lib/storage'; 
+import { combineReducers } from 'redux'; 
 import { persistReducer, persistStore, FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER } from 'redux-persist'; 
 import celebrityStyleSlice from './features/celebrity-style/celebrityStyleSlice';
 import userProfileSlice from './features/user-profile/userProfileSlice';
@@ -11,7 +12,6 @@ const persistConfig = {
 };
 
 
-// Combine Reducers (Important when using redux-persist)
 const rootReducer = combineReducers({
     celebrityStyle: celebrityStyleSlice,
     userProfile: userProfileSlice,
@@ -25,13 +25,13 @@ export const makeStore = () => {
         middleware: (getDefaultMiddleware) =>
             getDefaultMiddleware({
                 serializableCheck: {
-                    ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER], // Ignore redux-persist actions
+                    ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER], 
                 },
             }),
     });
 
     const persistor = persistStore(store);
-    return { store, persistor }; // Return both store and persistor
+    return { store, persistor }; 
 };
 
 // Infer the type of makeStore
