@@ -1,7 +1,8 @@
 "use client";
 import React, { useState } from "react";
 import TextareaAutosize from "@mui/material/TextareaAutosize";
-import { styled, InputLabel, SxProps } from "@mui/material";
+import { styled, InputLabel, SxProps, IconButton, Tooltip } from "@mui/material";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
 const StyledTextarea = styled(TextareaAutosize)(({ theme }) => ({
   multiline: true,
@@ -33,6 +34,7 @@ const StyledTextarea = styled(TextareaAutosize)(({ theme }) => ({
 
 interface CustomTextAreaProps {
   label: string;
+  defaultValue?: string;
   showLabel?: boolean;
   value?: string;
   placeholder?: string;
@@ -45,14 +47,21 @@ const CustomTextArea: React.FC<CustomTextAreaProps & { sx?: SxProps }> = ({
   value,
   onChange,
   placeholder,
-  rows = 4,
+  rows = 10,
   maxRows,
   showLabel = true,
+  defaultValue,
   sx,
   ...rest
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const [hasValue, setHasValue] = useState(!!value);
+
+  const [isExpanded, setIsExpanded] = useState(false); // Add a state for expansion
+
+  const toggleExpand = () => {
+    setIsExpanded(!isExpanded);
+  };
 
   const handleFocus = () => setIsFocused(true);
   const handleBlur = () => {
@@ -83,6 +92,7 @@ const CustomTextArea: React.FC<CustomTextAreaProps & { sx?: SxProps }> = ({
       <StyledTextarea
         id="custom-textarea"
         aria-label={label}
+        defaultValue={defaultValue}
         value={value}
         onChange={(e) => {
           setHasValue(!!e.target.value);
@@ -90,12 +100,37 @@ const CustomTextArea: React.FC<CustomTextAreaProps & { sx?: SxProps }> = ({
         }}
         placeholder={isFocused || hasValue ? placeholder : null}
         minRows={rows}
-        maxRows={maxRows}
+        maxRows={isExpanded ? maxRows : rows}
         onFocus={handleFocus}
         onBlur={handleBlur}
         sx={sx} // Apply sx prop here
         {...rest}
       />
+      <Tooltip title={isExpanded ? "Collapse" : "Expand"}>
+      <IconButton
+          onClick={toggleExpand}
+          sx={{
+            position: "absolute",
+            right: "16px",
+            bottom: "16px",
+            zIndex: 2,
+            // Styles for hover effect
+            "&:hover": {
+              backgroundColor: "black", // Black background on hover
+              "& .MuiSvgIcon-root": {  // Target the icon within the button
+                color: "rgb(237,108,1)"   
+              },
+            },
+          }}
+        >
+        <ExpandMoreIcon
+          sx={{
+            transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)", // Rotate icon
+            transition: "transform 200ms ease-in-out", // Add smooth transition
+          }}
+        />
+      </IconButton>
+      </Tooltip>
     </div>
   );
 };
