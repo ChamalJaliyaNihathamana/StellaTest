@@ -1,12 +1,6 @@
 // chatProvider.tsx
 "use client";
-import {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  FormEvent,
-} from "react";
+import { createContext, useContext, useState, FormEvent } from "react";
 import { useChat, Message } from "ai/react"; // Adjust import if needed
 import { ChatRequestOptions } from "ai";
 
@@ -60,17 +54,18 @@ export function ChatProvider({
       setError(error.message);
       setIsLoading(false);
     },
-  }); // Wrap handleSubmit to match the expected type
+  });
 
   const handleSubmit: ChatContextValue["handleSubmit"] = async (e, options) => {
     try {
-      setIsLoading(true); // Set loading state to true
+      setIsLoading(true);
       await originalHandleSubmit(e, options);
+      console.log("handleSubmit in ChatProvider successfully called");
     } catch (err: any) {
       setError(err.message || "Something went wrong");
-      console.error("Error in handleSubmit:", err); // Log the error for debugging
+      console.error("Error in handleSubmit:", err);
     } finally {
-      setIsLoading(false); // Always reset loading state
+      setIsLoading(false);
     }
   };
 
@@ -86,7 +81,7 @@ export function ChatProvider({
         error,
       }}
     >
-       {children}
+      {children}
     </ChatContext.Provider>
   );
 }
