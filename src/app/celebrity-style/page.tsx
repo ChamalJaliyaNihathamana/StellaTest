@@ -1,21 +1,15 @@
 // celebrity-style/page.tsx
 "use client";
 import { useState } from "react";
-// redux
 import { useSelector, useDispatch } from "react-redux";
 import { AppDispatch, RootState } from "@/lib/store";
 import {
   setAnalysisResults,
   setCelebrityName,
-  setError,
-  setLoading,
 } from "@/lib/features/celebrity-style/celebrityStyleSlice";
-// modals
-import { ChatRequestOptions, Message } from "ai";
-// utils
+import { Message } from "ai";
 import { combineStylePrompt } from "@/client/prompts/combineStylePrompt.";
 import { celebrityStyleAnalysisPrompt } from "@/client/prompts/celebrityStyleAnalyzerPrompt";
-// ui
 import CustomButton from "@/client/components/CustomButton";
 import CustomTextField from "@/client/components/CustomTextField";
 import {
@@ -25,30 +19,35 @@ import {
   FormHelperText,
 } from "@mui/material";
 import CustomTextArea from "@/client/components/CustomTextArea";
-import { useChatContext } from "@/client/components/chatProvider";
+
 import {
   cleanupResponse,
   parseJsonResponse,
 } from "@/client/utils/cleanerHelpers";
+import { useChatManager } from "@/client/hooks/useChatManager";
 
-interface CelebrityStyleProps {}
-
-const CelebrityStyle: React.FunctionComponent<CelebrityStyleProps> = () => {
+const CelebrityStyle: React.FunctionComponent = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const { celebrityName, isLoading, error, analysisResults } = useSelector(
+
+  const { celebrityName } = useSelector(
     (state: RootState) => state.celebrityStyle
   );
 
-  const { messages, input, handleInputChange, handleSubmit } = useChatContext();
-
+  const {
+    messages,
+    input,
+    handleInputChange,
+    handleSubmit,
+    isLoading,
+    error,
+  } = useChatManager("/api/openai");
   const [showInput, setShowInput] = useState(true);
 
   const handleSubmitWithLoading = async (
     e: React.FormEvent<HTMLFormElement>
   ) => {
     e.preventDefault();
-    dispatch(setLoading(true));
-    dispatch(setError(null));
+
     dispatch(setCelebrityName(input));
     setShowInput(false);
 
@@ -93,9 +92,8 @@ const CelebrityStyle: React.FunctionComponent<CelebrityStyleProps> = () => {
             output += decoder.decode(value, { stream: true });
           }
 
-          // clean up
           output = cleanupResponse(endpoint, output);
-          let content = parseJsonResponse(output) || output; 
+          let content = parseJsonResponse(output) || output;
 
           if (content.trim()) {
             console.log(`${name} Response:\n${content.trim()}`);
@@ -122,15 +120,13 @@ const CelebrityStyle: React.FunctionComponent<CelebrityStyleProps> = () => {
       dispatch(setAnalysisResults(responses.join("\n\n")));
     } catch (error: any) {
       console.error("Error in handleSubmitWithLoading:", error);
-      dispatch(setError(error.message || "Something went wrong"));
     } finally {
-      dispatch(setLoading(false));
     }
   };
 
   return (
     <Box>
-      <h3 className="pt-20">Celebrity Style Analyzer</h3>{" "}
+      <h3 className="pt-20">Celebrity Style Analyzer</h3>
       <Box
         sx={{
           padding: 2,
@@ -155,14 +151,13 @@ const CelebrityStyle: React.FunctionComponent<CelebrityStyleProps> = () => {
                 placeholder="Enter celebrity name"
                 value={input}
                 onChange={handleInputChange}
-              
               />
             ) : (
               <div>
                 <CustomTextField
                   label={"Celebrity Name"}
-                  value={celebrityName} 
-                  readOnly={true}
+                  value={celebrityName}
+                  readOnly
                   onClick={() => setShowInput(true)}
                 />
               </div>
@@ -178,11 +173,10 @@ const CelebrityStyle: React.FunctionComponent<CelebrityStyleProps> = () => {
             )}
             {error && <FormHelperText>{error}</FormHelperText>}
             {messages
-              .filter((m) => m.role === "assistant") // filter only AI messages
+              .filter((m) => m.role === "assistant")
               .map((m) => (
                 <CustomTextArea
                   showLabel={false}
-                  // defaultValue={analysisResults}
                   key={m.id}
                   label="AI Response"
                   value={m.content}

@@ -1,36 +1,63 @@
 "use client";
-import { useChatContext } from "@/client/components/chatProvider";
+import { useChatManager } from "@/client/hooks/useChatManager";
 // redux
 import { useSelector, useDispatch } from "react-redux";
 import { AppDispatch, RootState } from "@/lib/store";
 import { setProfession } from "@/lib/features/user-profile/userProfileSlice";
 // utils
+import { capsuleCollectionPrompt } from "@/client/prompts/capsuleCollectionPrompt";
 // ui
 import CustomButton from "@/client/components/CustomButton";
 import CustomTextArea from "@/client/components/CustomTextArea";
 import CustomTextField from "@/client/components/CustomTextField";
-import { Box } from "@mui/material";
+import {
+  Box,
+  ButtonGroup,
+  CircularProgress,
+  FormHelperText,
+} from "@mui/material";
 
 interface CapsuleProfessionProps {}
 
 const CapsuleProfession: React.FunctionComponent<
   CapsuleProfessionProps
 > = () => {
-
   const dispatch = useDispatch<AppDispatch>();
-  const { celebrityName,  analysisResults } = useSelector(
+  const { celebrityName, analysisResults } = useSelector(
     (state: RootState) => state.celebrityStyle
   );
-  const {existingWardrobe ,profession} = useSelector(
+  const { existingWardrobe, profession } = useSelector(
     (state: RootState) => state.userProfile
   );
 
-  const { messages, input, handleInputChange, handleSubmit } = useChatContext();
-  
+  const { messages, setInput, handleSubmit, error, isLoading } =
+    useChatManager("/api/openai");
 
-  const handleProfessionInputBlur = (event: React.FocusEvent<HTMLInputElement>) => {
+  const handleSubmitCapsule = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    try {
+      const modifiedInput = capsuleCollectionPrompt(
+        celebrityName,
+        analysisResults,
+        existingWardrobe,
+        profession
+      );
+      setInput(modifiedInput);
+      await handleSubmit(e);
+
+      console.log("After calling handleSubmit");
+    } catch (err: any) {
+      console.error("Error in handleSubmitDressLike:", err);
+    } finally {
+    }
+  };
+
+  const handleProfessionInputBlur = (
+    event: React.FocusEvent<HTMLInputElement>
+  ) => {
     dispatch(setProfession(event.target.value));
-};
+  };
 
   return (
     <Box>
@@ -54,10 +81,11 @@ const CapsuleProfession: React.FunctionComponent<
               m: 1,
               width: "calc(100% - 16px)",
             },
-            "& .MuiButton-root": { m: 1, width: "auto" }, 
+            "& .MuiButton-root": { m: 1, width: "auto" },
           }}
           noValidate
           autoComplete="off"
+          onSubmit={handleSubmitCapsule}
         >
           <div>
             <CustomTextField
@@ -66,7 +94,7 @@ const CapsuleProfession: React.FunctionComponent<
               onBlur={handleProfessionInputBlur}
               defaultValue={profession}
             />
-              <CustomTextField
+            <CustomTextField
               label={"Celebrity Name"}
               placeholder="Enter celebrity name"
               value={celebrityName}
@@ -89,7 +117,27 @@ const CapsuleProfession: React.FunctionComponent<
                 width: "calc(100% - 16px)",
               }}
             />
-            <CustomButton>Generate</CustomButton>
+            {isLoading ? (
+              <CircularProgress />
+            ) : (
+              <ButtonGroup>
+                <CustomButton type="submit" disabled={isLoading}>
+                  {isLoading ? "Generating..." : "Generate"}
+                </CustomButton>
+              </ButtonGroup>
+            )}
+            {error && <FormHelperText>{error}</FormHelperText>}
+            {messages
+              .filter((m) => m.role === "assistant")
+              .map((m) => (
+                <CustomTextArea
+                  key={m.id}
+                  showLabel={false}
+                  label="AI Response"
+                  value={m.content}
+                  sx={{ m: 1, width: "calc(100% - 16px)" }}
+                />
+              ))}
           </div>
         </Box>
       </Box>

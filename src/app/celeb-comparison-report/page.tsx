@@ -1,34 +1,59 @@
 // celeb-comparison-report/page.tsx
 "use client";
-import { useChatContext } from "@/client/components/chatProvider";
 // redux
 import { useSelector, useDispatch } from "react-redux";
 import { AppDispatch, RootState } from "@/lib/store";
 // utils
+import { celebrityComparisonPrompt } from "@/client/prompts/celebrityComparisonPrompt";
 // ui
 import CustomButton from "@/client/components/CustomButton";
 import CustomTextArea from "@/client/components/CustomTextArea";
 import CustomTextField from "@/client/components/CustomTextField";
-import { Box } from "@mui/material";
+import {
+  Box,
+  ButtonGroup,
+  CircularProgress,
+  FormHelperText,
+} from "@mui/material";
+import { useChatManager } from "@/client/hooks/useChatManager";
+
 interface CelebComparisonReportProps {}
 
 const CelebComparisonReport: React.FunctionComponent<
   CelebComparisonReportProps
 > = () => {
-
   const dispatch = useDispatch<AppDispatch>();
   const { celebrityName, analysisResults } = useSelector(
     (state: RootState) => state.celebrityStyle
   );
-  const {existingWardrobe} = useSelector(
+  const { existingWardrobe } = useSelector(
     (state: RootState) => state.userProfile
   );
 
-  const { messages, input, handleInputChange, handleSubmit } = useChatContext();
-  
+  const { messages, setInput, handleSubmit, isLoading, error } =
+    useChatManager("/api/openai");
 
-    
-    
+  const handleSubmitComparison = async (
+    e: React.FormEvent<HTMLFormElement>
+  ) => {
+    e.preventDefault();
+
+    try {
+      const modifiedInput = celebrityComparisonPrompt(
+        celebrityName,
+        analysisResults,
+        existingWardrobe
+      );
+      setInput(modifiedInput);
+      await handleSubmit(e);
+
+      console.log("After calling handleSubmit");
+    } catch (err: any) {
+      console.error("Error in handleSubmitDressLike:", err);
+    } finally {
+    }
+  };
+
   return (
     <Box>
       <h3 className="pt-20">Celeb Comparison Report</h3>
@@ -51,17 +76,17 @@ const CelebComparisonReport: React.FunctionComponent<
               m: 1,
               width: "calc(100% - 16px)",
             },
-            "& .MuiButton-root": { m: 1, width: "auto" }, 
+            "& .MuiButton-root": { m: 1, width: "auto" },
           }}
+          onSubmit={handleSubmitComparison}
           noValidate
           autoComplete="off"
         >
           <div>
-          <CustomTextField
+            <CustomTextField
               label={"Celebrity Name"}
               placeholder="Enter celebrity name"
               value={celebrityName}
-    
             />
             <CustomTextArea
               label={"Celebrity Style Data"}
@@ -81,7 +106,27 @@ const CelebComparisonReport: React.FunctionComponent<
                 width: "calc(100% - 16px)",
               }}
             />
-            <CustomButton>Generate</CustomButton>
+            {isLoading ? (
+              <CircularProgress />
+            ) : (
+              <ButtonGroup>
+                <CustomButton type="submit" disabled={isLoading}>
+                  {isLoading ? "Generating..." : "Generate"}
+                </CustomButton>
+              </ButtonGroup>
+            )}
+            {error && <FormHelperText>{error}</FormHelperText>}
+            {messages
+              .filter((m) => m.role === "assistant")
+              .map((m) => (
+                <CustomTextArea
+                  key={m.id}
+                  showLabel={false}
+                  label="AI Response"
+                  value={m.content}
+                  sx={{ m: 1, width: "calc(100% - 16px)" }}
+                />
+              ))}
           </div>
         </Box>
       </Box>

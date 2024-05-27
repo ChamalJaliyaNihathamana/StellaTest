@@ -1,7 +1,13 @@
 "use client";
 import React, { useState } from "react";
 import TextareaAutosize from "@mui/material/TextareaAutosize";
-import { styled, InputLabel, SxProps, IconButton, Tooltip } from "@mui/material";
+import {
+  styled,
+  InputLabel,
+  SxProps,
+  IconButton,
+  Tooltip,
+} from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
 const StyledTextarea = styled(TextareaAutosize)(({ theme }) => ({
@@ -36,6 +42,7 @@ interface CustomTextAreaProps {
   label: string;
   defaultValue?: string;
   showLabel?: boolean;
+  hidden?: boolean;
   value?: string;
   placeholder?: string;
   onChange?: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
@@ -52,6 +59,7 @@ const CustomTextArea: React.FC<CustomTextAreaProps & { sx?: SxProps }> = ({
   showLabel = true,
   defaultValue,
   sx,
+  hidden = false,
   ...rest
 }) => {
   const [isFocused, setIsFocused] = useState(false);
@@ -70,7 +78,7 @@ const CustomTextArea: React.FC<CustomTextAreaProps & { sx?: SxProps }> = ({
   };
 
   return (
-    <div style={{ position: "relative" }}>
+    <div style={{ position: "relative", display: hidden ? "none" : "block" }}>
       {showLabel ? (
         <InputLabel
           htmlFor="custom-textarea"
@@ -107,7 +115,7 @@ const CustomTextArea: React.FC<CustomTextAreaProps & { sx?: SxProps }> = ({
         {...rest}
       />
       <Tooltip title={isExpanded ? "Collapse" : "Expand"}>
-      <IconButton
+        <IconButton
           onClick={toggleExpand}
           sx={{
             position: "absolute",
@@ -117,19 +125,20 @@ const CustomTextArea: React.FC<CustomTextAreaProps & { sx?: SxProps }> = ({
             // Styles for hover effect
             "&:hover": {
               backgroundColor: "black", // Black background on hover
-              "& .MuiSvgIcon-root": {  // Target the icon within the button
-                color: "rgb(237,108,1)"   
+              "& .MuiSvgIcon-root": {
+                // Target the icon within the button
+                color: "rgb(237,108,1)",
               },
             },
           }}
         >
-        <ExpandMoreIcon
-          sx={{
-            transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)", // Rotate icon
-            transition: "transform 200ms ease-in-out", // Add smooth transition
-          }}
-        />
-      </IconButton>
+          <ExpandMoreIcon
+            sx={{
+              transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)", // Rotate icon
+              transition: "transform 200ms ease-in-out", // Add smooth transition
+            }}
+          />
+        </IconButton>
       </Tooltip>
     </div>
   );

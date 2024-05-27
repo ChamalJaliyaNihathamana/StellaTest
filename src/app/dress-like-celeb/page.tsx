@@ -1,13 +1,13 @@
 // dress-like-celeb/page.tsx
 "use client";
-import { useChat } from "ai/react";
-import { useChatContext } from "@/client/components/chatProvider";
-
-// redux
 import { useSelector, useDispatch } from "react-redux";
 import { AppDispatch, RootState } from "@/lib/store";
-// utils
-// ui
+import { useChatManager } from "@/client/hooks/useChatManager";
+import {
+  setError,
+  setLoading,
+} from "@/lib/features/user-profile/userProfileSlice";
+import { dressLikeCelebPrompt } from "@/client/prompts/dressLikeCelebPrompt";
 import CustomButton from "@/client/components/CustomButton";
 import CustomTextArea from "@/client/components/CustomTextArea";
 import CustomTextField from "@/client/components/CustomTextField";
@@ -17,55 +17,35 @@ import {
   CircularProgress,
   FormHelperText,
 } from "@mui/material";
-import {
-  setError,
-  setLoading,
-} from "@/lib/features/user-profile/userProfileSlice";
-import { dressLikeCelebPrompt } from "@/client/prompts/dressLikeCelebPrompt";
-import { Message } from "ai";
 
-interface DressLikeCelebProps {}
-
-const DressLikeCeleb: React.FunctionComponent<DressLikeCelebProps> = () => {
+const DressLikeCeleb: React.FunctionComponent = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { celebrityName, analysisResults } = useSelector(
     (state: RootState) => state.celebrityStyle
   );
-  const { existingWardrobe, isLoading, error } = useSelector(
+  const { existingWardrobe } = useSelector(
     (state: RootState) => state.userProfile
   );
+  const { messages, setInput, handleSubmit, isLoading, error } =
+    useChatManager("/api/openai");
 
-  const { messages:dressLikeMessages, handleSubmit:dressLikeHandleSubmit } = useChatContext();
-
-  const handleSubmitDressLike = async (
-    e: React.FormEvent<HTMLFormElement>
-  ) => {
+  const handleSubmitDressLike = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("handleSubmitWithLoading called");
     dispatch(setLoading(true));
     dispatch(setError(null));
 
     try {
-      console.log("inside try")
-     
       const modifiedInput = dressLikeCelebPrompt(
         celebrityName,
         analysisResults,
         existingWardrobe
       );
-      const newCombinedMessage: Message = {
-        id: crypto.randomUUID(),
-        role: "user",
-        content: modifiedInput,
-      };
-      console.log(newCombinedMessage)
-      dressLikeHandleSubmit(e, {
-        options: {
-          body: { messages: [...dressLikeMessages, newCombinedMessage] }, 
-        },
-      });
-   
+      setInput(modifiedInput);
+      await handleSubmit(e);
+
+      console.log("After calling handleSubmit");
     } catch (err: any) {
+      console.error("Error in handleSubmitDressLike:", err);
       dispatch(setError(err.message || "Something went wrong"));
     } finally {
       dispatch(setLoading(false));
@@ -82,7 +62,7 @@ const DressLikeCeleb: React.FunctionComponent<DressLikeCelebProps> = () => {
           borderColor: "rgb(210,210,210)",
         }}
       >
-       <Box
+        <Box
           component="form"
           sx={{
             "& .MuiTextField-root": { m: 1, width: "100%" },
@@ -102,20 +82,22 @@ const DressLikeCeleb: React.FunctionComponent<DressLikeCelebProps> = () => {
               label={"Celebrity Style Data"}
               placeholder="Enter celebrity style data"
               value={analysisResults}
-              sx={{
-                m: 1,
-                width: "calc(100% - 16px)",
-              }}
+              sx={{ m: 1, width: "calc(100% - 16px)" }}
             />
             <CustomTextArea
               label={"Existing Wardrobe"}
               value={existingWardrobe}
               placeholder="Enter existing wardrobe"
-              sx={{
-                m: 1,
-                width: "calc(100% - 16px)",
-              }}
+              sx={{ m: 1, width: "calc(100% - 16px)" }}
             />
+            {/* <CustomTextArea
+              label={"Prompt"}
+              placeholder="8 Ways to Dress like Celeb X"
+              value={input}
+              onChange={handleInputChange}
+              sx={{ m: 1, width: "calc(100% - 16px)" }}
+              hidden={true}
+            /> */}
             {isLoading ? (
               <CircularProgress />
             ) : (
@@ -126,12 +108,12 @@ const DressLikeCeleb: React.FunctionComponent<DressLikeCelebProps> = () => {
               </ButtonGroup>
             )}
             {error && <FormHelperText>{error}</FormHelperText>}
-            {dressLikeMessages
-              .filter((m) => m.role === "assistant") // Filter only AI messages
+            {messages
+              .filter((m) => m.role === "assistant")
               .map((m) => (
                 <CustomTextArea
-                  showLabel={false}
                   key={m.id}
+                  showLabel={false}
                   label="AI Response"
                   value={m.content}
                   sx={{ m: 1, width: "calc(100% - 16px)" }}
