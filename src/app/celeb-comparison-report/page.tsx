@@ -1,5 +1,6 @@
 // celeb-comparison-report/page.tsx
 "use client";
+import { useEffect } from "react";
 // redux
 import { useSelector, useDispatch } from "react-redux";
 import { AppDispatch, RootState } from "@/lib/store";
@@ -32,26 +33,21 @@ const CelebComparisonReport: React.FunctionComponent<
 
   const { messages, setInput, handleSubmit, isLoading, error } =
     useChatManager("/api/openai");
+  useEffect(() => {
+    const modifiedInput = celebrityComparisonPrompt(
+      celebrityName,
+      analysisResults,
+      existingWardrobe
+    );
+    setInput(modifiedInput);
+  }, [analysisResults, celebrityName, existingWardrobe, setInput]);
 
   const handleSubmitComparison = async (
     e: React.FormEvent<HTMLFormElement>
   ) => {
     e.preventDefault();
 
-    try {
-      const modifiedInput = celebrityComparisonPrompt(
-        celebrityName,
-        analysisResults,
-        existingWardrobe
-      );
-      setInput(modifiedInput);
-      await handleSubmit(e);
-
-      console.log("After calling handleSubmit");
-    } catch (err: any) {
-      console.error("Error in handleSubmitDressLike:", err);
-    } finally {
-    }
+    handleSubmit(e);
   };
 
   return (

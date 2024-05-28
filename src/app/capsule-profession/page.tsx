@@ -1,4 +1,6 @@
+// capsule-profession
 "use client";
+import { useEffect } from "react";
 import { useChatManager } from "@/client/hooks/useChatManager";
 // redux
 import { useSelector, useDispatch } from "react-redux";
@@ -33,24 +35,19 @@ const CapsuleProfession: React.FunctionComponent<
   const { messages, setInput, handleSubmit, error, isLoading } =
     useChatManager("/api/openai");
 
+  useEffect(() => {
+    const modifiedInput = capsuleCollectionPrompt(
+      celebrityName,
+      analysisResults,
+      existingWardrobe,
+      profession
+    );
+    setInput(modifiedInput);
+  }, [analysisResults, celebrityName, existingWardrobe, setInput, profession]);
+
   const handleSubmitCapsule = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
-    try {
-      const modifiedInput = capsuleCollectionPrompt(
-        celebrityName,
-        analysisResults,
-        existingWardrobe,
-        profession
-      );
-      setInput(modifiedInput);
-      await handleSubmit(e);
-
-      console.log("After calling handleSubmit");
-    } catch (err: any) {
-      console.error("Error in handleSubmitDressLike:", err);
-    } finally {
-    }
+    await handleSubmit(e);
   };
 
   const handleProfessionInputBlur = (

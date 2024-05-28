@@ -1,12 +1,10 @@
 // dress-like-celeb/page.tsx
 "use client";
+import { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { AppDispatch, RootState } from "@/lib/store";
 import { useChatManager } from "@/client/hooks/useChatManager";
-import {
-  setError,
-  setLoading,
-} from "@/lib/features/user-profile/userProfileSlice";
+
 import { dressLikeCelebPrompt } from "@/client/prompts/dressLikeCelebPrompt";
 import CustomButton from "@/client/components/CustomButton";
 import CustomTextArea from "@/client/components/CustomTextArea";
@@ -18,6 +16,7 @@ import {
   FormHelperText,
 } from "@mui/material";
 
+
 const DressLikeCeleb: React.FunctionComponent = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { celebrityName, analysisResults } = useSelector(
@@ -26,30 +25,27 @@ const DressLikeCeleb: React.FunctionComponent = () => {
   const { existingWardrobe } = useSelector(
     (state: RootState) => state.userProfile
   );
-  const { messages, setInput, handleSubmit, isLoading, error } =
-    useChatManager("/api/openai");
+
+  const {
+    messages,
+    setInput,
+    handleSubmit,
+    isLoading,
+    error,
+  } = useChatManager("/api/openai");
+
+  useEffect(() => {
+    const modifiedInput = dressLikeCelebPrompt(
+      celebrityName,
+      analysisResults,
+      existingWardrobe
+    );
+    setInput(modifiedInput);
+  }, [analysisResults, celebrityName, existingWardrobe, setInput]);
 
   const handleSubmitDressLike = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    dispatch(setLoading(true));
-    dispatch(setError(null));
-
-    try {
-      const modifiedInput = dressLikeCelebPrompt(
-        celebrityName,
-        analysisResults,
-        existingWardrobe
-      );
-      setInput(modifiedInput);
-      await handleSubmit(e);
-
-      console.log("After calling handleSubmit");
-    } catch (err: any) {
-      console.error("Error in handleSubmitDressLike:", err);
-      dispatch(setError(err.message || "Something went wrong"));
-    } finally {
-      dispatch(setLoading(false));
-    }
+    handleSubmit(e);
   };
 
   return (
