@@ -1,6 +1,7 @@
 // celebrity-style/page.tsx
 "use client";
 import { useState } from "react";
+// redux
 import { useSelector, useDispatch } from "react-redux";
 import { AppDispatch, RootState } from "@/lib/store";
 import {
@@ -8,8 +9,16 @@ import {
   setCelebrityName,
 } from "@/lib/features/celebrity-style/celebrityStyleSlice";
 import { Message } from "ai";
+// hooks
+import { useChatManager } from "@/client/hooks/useChatManager";
+// utils
 import { combineStylePrompt } from "@/client/prompts/combineStylePrompt.";
 import { celebrityStyleAnalysisPrompt } from "@/client/prompts/celebrityStyleAnalyzerPrompt";
+import {
+  cleanupResponse,
+  parseJsonResponse,
+} from "@/client/utils/cleanerHelpers";
+// ui
 import CustomButton from "@/client/components/CustomButton";
 import CustomTextField from "@/client/components/CustomTextField";
 import {
@@ -20,11 +29,6 @@ import {
 } from "@mui/material";
 import CustomTextArea from "@/client/components/CustomTextArea";
 
-import {
-  cleanupResponse,
-  parseJsonResponse,
-} from "@/client/utils/cleanerHelpers";
-import { useChatManager } from "@/client/hooks/useChatManager";
 
 const CelebrityStyle: React.FunctionComponent = () => {
   const dispatch = useDispatch<AppDispatch>();

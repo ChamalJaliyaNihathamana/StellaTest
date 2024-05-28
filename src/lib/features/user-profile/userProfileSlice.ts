@@ -4,6 +4,8 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 interface UserProfileState {
   existingWardrobe: string;
   profession: string;
+  occasion: string;
+  vacation: string;
   isLoading: boolean;
   error: string | null;
 }
@@ -144,6 +146,8 @@ const initialState: UserProfileState = {
   Costume Jewelry Ring: A chunky gold-toned ring with a large square-shaped face. The face of the ring is decorated with an embossed rose design and a small red gemstone in the center, possibly a ruby. The ring has a bold and statement-making appearance, adding a touch of vintage flair to any outfit.
   Stackable Black Diamond Rings: A set of two stackable rings made from a dark metal, possibly oxidized silver or black gold. Each ring is adorned with a row of small, pavé-set black diamonds, adding a touch of sparkle and a modern edge. The rings have a thin and delicate design, making them perfect for stacking or wearing individually.`,
   profession: "",
+  occasion: "",
+  vacation: "",
   isLoading: false,
   error: null,
 };
@@ -158,6 +162,12 @@ export const userProfileSlice = createSlice({
     setProfession: (state, action: PayloadAction<string>) => {
       state.profession = action.payload;
     },
+    setOccasion: (state, action: PayloadAction<string>) => {
+      state.occasion = action.payload;
+    },
+    setVacation: (state, action: PayloadAction<string>) => {
+      state.vacation = action.payload;
+    },
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.isLoading = action.payload;
     },
@@ -170,6 +180,8 @@ export const userProfileSlice = createSlice({
 export const {
   setExistingWardrobe,
   setProfession,
+  setOccasion,
+  setVacation,
   setLoading,
   setError,
 } = userProfileSlice.actions;

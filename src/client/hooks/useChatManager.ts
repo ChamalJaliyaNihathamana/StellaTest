@@ -8,7 +8,12 @@ export function useChatManager(api: string) {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { input, handleInputChange, handleSubmit: originalHandleSubmit ,setInput } = useChat({
+  const {
+    input,
+    handleInputChange,
+    handleSubmit: originalHandleSubmit,
+    setInput,
+  } = useChat({
     api,
     onFinish: (message) => {
       setMessages((prevMessages) => [...prevMessages, message]);
@@ -20,7 +25,10 @@ export function useChatManager(api: string) {
     },
   });
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>, options?: ChatRequestOptions) => {
+  const handleSubmit = async (
+    e: React.FormEvent<HTMLFormElement>,
+    options?: ChatRequestOptions
+  ) => {
     try {
       setIsLoading(true);
       setError(null); // Clear previous error
@@ -42,6 +50,6 @@ export function useChatManager(api: string) {
     handleSubmit,
     isLoading,
     error,
-    setInput
+    setInput,
   };
 }
