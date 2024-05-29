@@ -1,11 +1,17 @@
 // dress-like-celeb/page.tsx
 "use client";
 import { useEffect } from "react";
+// redux
 import { useSelector, useDispatch } from "react-redux";
+import { SET_CURRENT_DATA_TYPE } from "@/lib/features/fashion-insights/fashionInsightsSlice";
 import { AppDispatch, RootState } from "@/lib/store";
+// hooks
 import { useChatManager } from "@/client/hooks/useChatManager";
-
+// utils
 import { dressLikeCelebPrompt } from "@/client/prompts/dressLikeCelebPrompt";
+// model
+import { FashionInsightDataType } from "@/enums/fashion-insights-enum";
+// ui
 import CustomButton from "@/client/components/CustomButton";
 import CustomTextArea from "@/client/components/CustomTextArea";
 import CustomTextField from "@/client/components/CustomTextField";
@@ -16,35 +22,34 @@ import {
   FormHelperText,
 } from "@mui/material";
 
-
 const DressLikeCeleb: React.FunctionComponent = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const { celebrityName, analysisResults } = useSelector(
+  const { celebrityName } = useSelector(
     (state: RootState) => state.celebrityStyle
+  );
+  const celebrityStyleData = useSelector(
+    (state: RootState) =>
+      state.fashionInsights.data[FashionInsightDataType.CELEBRITY_STYLE_DATA]
   );
   const { existingWardrobe } = useSelector(
     (state: RootState) => state.userProfile
   );
 
-  const {
-    messages,
-    setInput,
-    handleSubmit,
-    isLoading,
-    error,
-  } = useChatManager("/api/openai");
+  const { messages, setInput, handleSubmit, isLoading, error } =
+    useChatManager("/api/openai");
 
   useEffect(() => {
     const modifiedInput = dressLikeCelebPrompt(
       celebrityName,
-      analysisResults,
+      celebrityStyleData,
       existingWardrobe
     );
     setInput(modifiedInput);
-  }, [analysisResults, celebrityName, existingWardrobe, setInput]);
+  }, [celebrityStyleData, celebrityName, existingWardrobe, setInput]);
 
   const handleSubmitDressLike = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    dispatch(SET_CURRENT_DATA_TYPE(FashionInsightDataType.WAYS_TO_DRESS_LIKE));
     handleSubmit(e);
   };
 
@@ -77,7 +82,7 @@ const DressLikeCeleb: React.FunctionComponent = () => {
             <CustomTextArea
               label={"Celebrity Style Data"}
               placeholder="Enter celebrity style data"
-              value={analysisResults}
+              value={celebrityStyleData}
               sx={{ m: 1, width: "calc(100% - 16px)" }}
             />
             <CustomTextArea

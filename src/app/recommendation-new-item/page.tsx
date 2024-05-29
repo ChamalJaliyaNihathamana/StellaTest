@@ -3,9 +3,12 @@
 import { useEffect } from "react";
 // redux
 import { useSelector, useDispatch } from "react-redux";
+import { SET_CURRENT_DATA_TYPE } from "@/lib/features/fashion-insights/fashionInsightsSlice";
 import { AppDispatch, RootState } from "@/lib/store";
 // hooks
 import { useChatManager } from "@/client/hooks/useChatManager";
+// model
+import { FashionInsightDataType } from "@/enums/fashion-insights-enum";
 // utils
 import { recommendNewItemPrompt } from "@/client/prompts/recommendNewItemPrompt";
 // ui
@@ -25,31 +28,38 @@ const RecommendationNewItem: React.FunctionComponent<
   RecommendationNewItemProps
 > = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const { celebrityName, analysisResults } = useSelector(
+  const { celebrityName } = useSelector(
     (state: RootState) => state.celebrityStyle
   );
   const { existingWardrobe } = useSelector(
     (state: RootState) => state.userProfile
   );
+
+  const celebrityStyleData = useSelector(
+    (state: RootState) =>
+      state.fashionInsights.data[FashionInsightDataType.CELEBRITY_STYLE_DATA]
+  );
+
   const { messages, setInput, handleSubmit, isLoading, error } =
     useChatManager("/api/openai");
 
   useEffect(() => {
     const modifiedInput = recommendNewItemPrompt(
       celebrityName,
-      analysisResults,
+      celebrityStyleData,
       existingWardrobe
     );
     setInput(modifiedInput);
-  }, [analysisResults, celebrityName, existingWardrobe, setInput]);
+  }, [celebrityStyleData, celebrityName, existingWardrobe, setInput]);
 
   const handleSubmitRecommendationItem = async (
     e: React.FormEvent<HTMLFormElement>
   ) => {
     e.preventDefault();
-    await handleSubmit(e);
+    dispatch(SET_CURRENT_DATA_TYPE(FashionInsightDataType.ITEM_RECOMMENDATION));
+    handleSubmit(e);
   };
-  
+
   return (
     <Box>
       <h3 className="pt-20">
@@ -89,7 +99,7 @@ const RecommendationNewItem: React.FunctionComponent<
             <CustomTextArea
               label={"Celebrity Style Data"}
               placeholder="Enter celebrity style data"
-              value={analysisResults}
+              value={celebrityStyleData}
               sx={{ m: 1, width: "calc(100% - 16px)" }}
             />
             <CustomTextArea

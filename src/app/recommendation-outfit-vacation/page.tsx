@@ -1,11 +1,15 @@
 // recommendation-outfit-vacation
 "use client";
 import { useEffect } from "react";
-import { useChatManager } from "@/client/hooks/useChatManager";
 // redux
 import { useSelector, useDispatch } from "react-redux";
+import { SET_CURRENT_DATA_TYPE } from "@/lib/features/fashion-insights/fashionInsightsSlice";
 import { AppDispatch, RootState } from "@/lib/store";
 import { setVacation } from "@/lib/features/user-profile/userProfileSlice";
+// hooks
+import { useChatManager } from "@/client/hooks/useChatManager";
+// model
+import { FashionInsightDataType } from "@/enums/fashion-insights-enum";
 // utils
 import { recommendOutfitVacationPrompt } from "@/client/prompts/recommendOutfitVacationPrompt";
 // ui
@@ -25,29 +29,37 @@ const RecommendationOutfitVacation: React.FunctionComponent<
   RecommendationOutfitVacationProps
 > = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const { celebrityName, analysisResults } = useSelector(
+  const { celebrityName } = useSelector(
     (state: RootState) => state.celebrityStyle
   );
   const { existingWardrobe, vacation } = useSelector(
     (state: RootState) => state.userProfile
   );
-
+  const celebrityStyleData = useSelector(
+    (state: RootState) =>
+      state.fashionInsights.data[FashionInsightDataType.CELEBRITY_STYLE_DATA]
+  );
   const { messages, setInput, handleSubmit, error, isLoading } =
     useChatManager("/api/openai");
 
   useEffect(() => {
     const modifiedInput = recommendOutfitVacationPrompt(
       celebrityName,
-      analysisResults,
+      celebrityStyleData,
       existingWardrobe,
       vacation
     );
     setInput(modifiedInput);
-  }, [analysisResults, celebrityName, existingWardrobe, setInput, vacation]);
+  }, [celebrityStyleData, celebrityName, existingWardrobe, setInput, vacation]);
 
   const handleSubmitVacation = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    await handleSubmit(e);
+    dispatch(
+      SET_CURRENT_DATA_TYPE(
+        FashionInsightDataType.OUTFIT_RECOMMENDATION_VACATION
+      )
+    );
+    handleSubmit(e);
   };
 
   const handleVacationInputBlur = (
@@ -98,7 +110,7 @@ const RecommendationOutfitVacation: React.FunctionComponent<
             <CustomTextArea
               label={"Celebrity Style Data"}
               placeholder="Enter celebrity style data"
-              value={analysisResults}
+              value={celebrityStyleData}
               sx={{
                 m: 1,
                 width: "calc(100% - 16px)",
