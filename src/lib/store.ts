@@ -5,6 +5,7 @@ import { combineReducers } from 'redux';
 import { persistReducer, persistStore, FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER } from 'redux-persist'; 
 import celebrityStyleSlice from './features/celebrity-style/celebrityStyleSlice';
 import userProfileSlice from './features/user-profile/userProfileSlice';
+import fashionInsightsSlice from './features/fashion-insights/fashionInsightsSlice';
 
 const persistConfig = {
     key: 'root',
@@ -15,6 +16,7 @@ const persistConfig = {
 const rootReducer = combineReducers({
     celebrityStyle: celebrityStyleSlice,
     userProfile: userProfileSlice,
+    fashionInsights: fashionInsightsSlice,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

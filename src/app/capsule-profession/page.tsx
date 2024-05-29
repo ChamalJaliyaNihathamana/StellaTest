@@ -6,6 +6,9 @@ import { useChatManager } from "@/client/hooks/useChatManager";
 import { useSelector, useDispatch } from "react-redux";
 import { AppDispatch, RootState } from "@/lib/store";
 import { setProfession } from "@/lib/features/user-profile/userProfileSlice";
+import { SET_CURRENT_DATA_TYPE } from "@/lib/features/fashion-insights/fashionInsightsSlice";
+// model
+import { FashionInsightDataType } from "@/enums/fashion-insights-enum";
 // utils
 import { capsuleCollectionPrompt } from "@/client/prompts/capsuleCollectionPrompt";
 // ui
@@ -25,29 +28,39 @@ const CapsuleProfession: React.FunctionComponent<
   CapsuleProfessionProps
 > = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const { celebrityName, analysisResults } = useSelector(
+  const { celebrityName } = useSelector(
     (state: RootState) => state.celebrityStyle
   );
   const { existingWardrobe, profession } = useSelector(
     (state: RootState) => state.userProfile
   );
-
+  const celebrityStyleData = useSelector(
+    (state: RootState) =>
+      state.fashionInsights.data[FashionInsightDataType.CELEBRITY_STYLE_DATA]
+  );
   const { messages, setInput, handleSubmit, error, isLoading } =
     useChatManager("/api/openai");
 
   useEffect(() => {
     const modifiedInput = capsuleCollectionPrompt(
       celebrityName,
-      analysisResults,
+      celebrityStyleData,
       existingWardrobe,
       profession
     );
     setInput(modifiedInput);
-  }, [analysisResults, celebrityName, existingWardrobe, setInput, profession]);
+  }, [
+    celebrityStyleData,
+    celebrityName,
+    existingWardrobe,
+    setInput,
+    profession,
+  ]);
 
   const handleSubmitCapsule = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    await handleSubmit(e);
+    dispatch(SET_CURRENT_DATA_TYPE(FashionInsightDataType.CAPSULE_PROFESSION));
+    handleSubmit(e);
   };
 
   const handleProfessionInputBlur = (
@@ -99,7 +112,7 @@ const CapsuleProfession: React.FunctionComponent<
             <CustomTextArea
               label={"Celebrity Style Data"}
               placeholder="Enter celebrity style data"
-              value={analysisResults}
+              value={celebrityStyleData}
               sx={{
                 m: 1,
                 width: "calc(100% - 16px)",

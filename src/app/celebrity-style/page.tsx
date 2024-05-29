@@ -4,11 +4,11 @@ import { useState } from "react";
 // redux
 import { useSelector, useDispatch } from "react-redux";
 import { AppDispatch, RootState } from "@/lib/store";
-import {
-  setAnalysisResults,
-  setCelebrityName,
-} from "@/lib/features/celebrity-style/celebrityStyleSlice";
+import { setCelebrityName } from "@/lib/features/celebrity-style/celebrityStyleSlice";
+import { SET_CURRENT_DATA_TYPE } from "@/lib/features/fashion-insights/fashionInsightsSlice";
+// models
 import { Message } from "ai";
+import { FashionInsightDataType } from "@/enums/fashion-insights-enum";
 // hooks
 import { useChatManager } from "@/client/hooks/useChatManager";
 // utils
@@ -29,7 +29,6 @@ import {
 } from "@mui/material";
 import CustomTextArea from "@/client/components/CustomTextArea";
 
-
 const CelebrityStyle: React.FunctionComponent = () => {
   const dispatch = useDispatch<AppDispatch>();
 
@@ -37,25 +36,20 @@ const CelebrityStyle: React.FunctionComponent = () => {
     (state: RootState) => state.celebrityStyle
   );
 
-  const {
-    messages,
-    input,
-    handleInputChange,
-    handleSubmit,
-    isLoading,
-    error,
-  } = useChatManager("/api/openai");
+  const { messages, input, handleInputChange, handleSubmit, isLoading, error } =
+    useChatManager("/api/openai");
   const [showInput, setShowInput] = useState(true);
+  const [LLMPipeLoading, setLLMPipeLoading] = useState(false);
 
   const handleSubmitWithLoading = async (
     e: React.FormEvent<HTMLFormElement>
   ) => {
     e.preventDefault();
-
     dispatch(setCelebrityName(input));
     setShowInput(false);
 
     try {
+      setLLMPipeLoading(true);
       const apiEndpoints = [
         { name: "Gemini", endpoint: "/api/gemini" },
         { name: "Anthropic", endpoint: "/api/anthropic" },
@@ -114,17 +108,20 @@ const CelebrityStyle: React.FunctionComponent = () => {
         role: "user",
         content: combinedPrompt,
       };
-
+      dispatch(
+        SET_CURRENT_DATA_TYPE(FashionInsightDataType.CELEBRITY_STYLE_DATA)
+      );
       handleSubmit(e, {
         options: {
-          body: { messages: [...messages, newCombinedMessage] },
+          body: {
+            messages: [...messages, newCombinedMessage],
+          },
         },
       });
-
-      dispatch(setAnalysisResults(responses.join("\n\n")));
     } catch (error: any) {
       console.error("Error in handleSubmitWithLoading:", error);
     } finally {
+      setLLMPipeLoading(false);
     }
   };
 
@@ -166,7 +163,7 @@ const CelebrityStyle: React.FunctionComponent = () => {
                 />
               </div>
             )}
-            {isLoading ? (
+            {isLoading || LLMPipeLoading ? (
               <CircularProgress />
             ) : (
               <ButtonGroup>

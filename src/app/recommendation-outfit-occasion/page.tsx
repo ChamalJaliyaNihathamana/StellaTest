@@ -1,11 +1,15 @@
 // recommendation-outfit-occasion
 "use client";
 import { useEffect } from "react";
-import { useChatManager } from "@/client/hooks/useChatManager";
 // redux
 import { useSelector, useDispatch } from "react-redux";
+import { SET_CURRENT_DATA_TYPE } from "@/lib/features/fashion-insights/fashionInsightsSlice";
 import { AppDispatch, RootState } from "@/lib/store";
 import { setOccasion } from "@/lib/features/user-profile/userProfileSlice";
+// hooks
+import { useChatManager } from "@/client/hooks/useChatManager";
+// model
+import { FashionInsightDataType } from "@/enums/fashion-insights-enum";
 // utils
 import { recommendOutfitOccasionPrompt } from "@/client/prompts/recommendOutfitOccasionPrompt";
 // ui
@@ -25,11 +29,16 @@ const RecommendationOutfitOccasion: React.FunctionComponent<
   RecommendationOutfitOccasionProps
 > = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const { celebrityName, analysisResults } = useSelector(
+  const { celebrityName } = useSelector(
     (state: RootState) => state.celebrityStyle
   );
   const { existingWardrobe, occasion } = useSelector(
     (state: RootState) => state.userProfile
+  );
+
+  const celebrityStyleData = useSelector(
+    (state: RootState) =>
+      state.fashionInsights.data[FashionInsightDataType.CELEBRITY_STYLE_DATA]
   );
 
   const { messages, setInput, handleSubmit, error, isLoading } =
@@ -38,17 +47,21 @@ const RecommendationOutfitOccasion: React.FunctionComponent<
   useEffect(() => {
     const modifiedInput = recommendOutfitOccasionPrompt(
       celebrityName,
-      analysisResults,
+      celebrityStyleData,
       existingWardrobe,
       occasion
     );
     setInput(modifiedInput);
-  }, [analysisResults, celebrityName, existingWardrobe, setInput, occasion]);
+  }, [celebrityStyleData, celebrityName, existingWardrobe, setInput, occasion]);
 
   const handleSubmitOccasion = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
-    await handleSubmit(e);
+    dispatch(
+      SET_CURRENT_DATA_TYPE(
+        FashionInsightDataType.OUTFIT_RECOMMENDATION_OCCASION
+      )
+    );
+    handleSubmit(e);
   };
 
   const handleOccasionInputBlur = (
@@ -100,7 +113,7 @@ const RecommendationOutfitOccasion: React.FunctionComponent<
             <CustomTextArea
               label={"Celebrity Style Data"}
               placeholder="Enter celebrity style data"
-              value={analysisResults}
+              value={celebrityStyleData}
               sx={{
                 m: 1,
                 width: "calc(100% - 16px)",

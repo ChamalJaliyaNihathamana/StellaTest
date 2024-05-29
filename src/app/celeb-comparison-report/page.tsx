@@ -3,9 +3,14 @@
 import { useEffect } from "react";
 // redux
 import { useSelector, useDispatch } from "react-redux";
+import { SET_CURRENT_DATA_TYPE } from "@/lib/features/fashion-insights/fashionInsightsSlice";
 import { AppDispatch, RootState } from "@/lib/store";
+// hooks
+import { useChatManager } from "@/client/hooks/useChatManager";
 // utils
 import { celebrityComparisonPrompt } from "@/client/prompts/celebrityComparisonPrompt";
+// model
+import { FashionInsightDataType } from "@/enums/fashion-insights-enum";
 // ui
 import CustomButton from "@/client/components/CustomButton";
 import CustomTextArea from "@/client/components/CustomTextArea";
@@ -16,7 +21,6 @@ import {
   CircularProgress,
   FormHelperText,
 } from "@mui/material";
-import { useChatManager } from "@/client/hooks/useChatManager";
 
 interface CelebComparisonReportProps {}
 
@@ -24,29 +28,32 @@ const CelebComparisonReport: React.FunctionComponent<
   CelebComparisonReportProps
 > = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const { celebrityName, analysisResults } = useSelector(
+  const { celebrityName } = useSelector(
     (state: RootState) => state.celebrityStyle
   );
   const { existingWardrobe } = useSelector(
     (state: RootState) => state.userProfile
   );
-
+  const celebrityStyleData = useSelector(
+    (state: RootState) =>
+      state.fashionInsights.data[FashionInsightDataType.CELEBRITY_STYLE_DATA]
+  );
   const { messages, setInput, handleSubmit, isLoading, error } =
     useChatManager("/api/openai");
   useEffect(() => {
     const modifiedInput = celebrityComparisonPrompt(
       celebrityName,
-      analysisResults,
+      celebrityStyleData,
       existingWardrobe
     );
     setInput(modifiedInput);
-  }, [analysisResults, celebrityName, existingWardrobe, setInput]);
+  }, [celebrityStyleData, celebrityName, existingWardrobe, setInput]);
 
   const handleSubmitComparison = async (
     e: React.FormEvent<HTMLFormElement>
   ) => {
     e.preventDefault();
-
+    dispatch(SET_CURRENT_DATA_TYPE(FashionInsightDataType.COMPARISON_REPORT));
     handleSubmit(e);
   };
 
@@ -87,7 +94,7 @@ const CelebComparisonReport: React.FunctionComponent<
             <CustomTextArea
               label={"Celebrity Style Data"}
               placeholder="Enter celebrity style data"
-              value={analysisResults}
+              value={celebrityStyleData}
               sx={{
                 m: 1,
                 width: "calc(100% - 16px)",

@@ -3,10 +3,22 @@ import { useState } from "react";
 import { useChat, Message } from "ai/react"; // Adjust import if needed
 import { ChatRequestOptions } from "ai";
 
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "@/lib/store"; // Update with your actual path
+import {
+  SET_FASHION_INSIGHTS,
+  SET_LOADING_STATUS,
+  SET_ERROR,
+} from "@/lib/features/fashion-insights/fashionInsightsSlice";
+
 export function useChatManager(api: string) {
+  const dispatch = useDispatch();
   const [messages, setMessages] = useState<Message[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+
+  const isLoading = useSelector(
+    (state: RootState) => state.fashionInsights.isLoading
+  );
+  const error = useSelector((state: RootState) => state.fashionInsights.error);
 
   const {
     input,
@@ -17,28 +29,30 @@ export function useChatManager(api: string) {
     api,
     onFinish: (message) => {
       setMessages((prevMessages) => [...prevMessages, message]);
-      setIsLoading(false);
+
+      dispatch(
+        SET_FASHION_INSIGHTS({
+          data: message.content,
+        })
+      );
     },
     onError: (error) => {
-      setError(error.message);
-      setIsLoading(false);
+      dispatch(SET_ERROR({ error: error.message }));
     },
   });
-
   const handleSubmit = async (
     e: React.FormEvent<HTMLFormElement>,
     options?: ChatRequestOptions
   ) => {
     try {
-      setIsLoading(true);
-      setError(null); // Clear previous error
-      await originalHandleSubmit(e, options);
+      dispatch(SET_LOADING_STATUS()); // Start loading
+      await originalHandleSubmit(e, options); // Call originalHandleSubmit with options
       console.log("handleSubmit successfully called");
     } catch (err: any) {
-      setError(err.message || "Something went wrong");
+      dispatch(SET_ERROR({ error: err.message || "Something went wrong" })); // Dispatch error action
       console.error("Error in handleSubmit:", err);
     } finally {
-      setIsLoading(false);
+      SET_LOADING_STATUS();
     }
   };
 
@@ -48,8 +62,8 @@ export function useChatManager(api: string) {
     input,
     handleInputChange,
     handleSubmit,
+    setInput,
     isLoading,
     error,
-    setInput,
   };
 }
