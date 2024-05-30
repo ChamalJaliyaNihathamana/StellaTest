@@ -2,7 +2,7 @@
 import * as React from "react";
 import { usePathname } from "next/navigation";
 // redux
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/lib/store";
 // model
 import { FashionInsightDataType } from "@/enums/fashion-insights-enum";
@@ -14,7 +14,8 @@ import Button from "@mui/material/Button";
 import Link from "next/link";
 import Box from "@mui/material/Box";
 import DownloadIcon from "@mui/icons-material/Download";
-import { IconButton, Tooltip } from "@mui/material";
+import RestartAltIcon from '@mui/icons-material/RestartAlt';
+import { IconButton, Tooltip, Typography } from "@mui/material";
 
 const links = [
   { label: "Video Onboard", href: "/" },
@@ -38,6 +39,8 @@ const links = [
 const linksPerRow = 5; // Number of links to show initially
 
 export default function Navbar() {
+  const dispatch = useDispatch();
+  
   const fashionInsights = useSelector(
     (state: RootState) => state.fashionInsights.data
   );
@@ -105,12 +108,15 @@ export default function Navbar() {
     setShowMore(!showMore);
   };
 
+  const handleFlushState = () => {
+    dispatch({ type: "RESET_ALL" });
+  };
   return (
     <AppBar position="static" sx={{ backgroundColor: "black" }}>
       <Toolbar>
         <Box sx={{ display: "flex", alignItems: "center", width: "100%" }}>
           {/* <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            Glamhive AI
+            Stella AI
           </Typography> */}
           <Box sx={{ display: "flex", flexWrap: "wrap" }}>
             {visibleLinks.map((link) => (
@@ -141,6 +147,19 @@ export default function Navbar() {
                 }}
               >
                 <DownloadIcon />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Flush State">
+              <IconButton
+                onClick={handleFlushState}
+                sx={{
+                  color: "white",
+                  "&:hover": {
+                    color: "warning.main",
+                  },
+                }}
+              >
+                <RestartAltIcon />
               </IconButton>
             </Tooltip>
             {links.length > linksPerRow && (
