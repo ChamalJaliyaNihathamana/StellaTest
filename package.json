@@ -24,6 +24,7 @@
     "ai": "^3.1.8",
     "anthropic": "^0.0.0",
     "bootstrap-icons": "^1.11.3",
+    "jspdf": "^2.5.1",
     "next": "14.2.3",
     "next-auth": "^4.24.7",
     "next-redux-wrapper": "^8.1.0",
