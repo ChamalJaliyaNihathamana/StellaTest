@@ -28,6 +28,9 @@ import {
   FormHelperText,
 } from "@mui/material";
 import CustomTextArea from "@/client/components/CustomTextArea";
+import CelebrityStyleInsight from "./celebrity-style";
+
+
 
 const CelebrityStyle: React.FunctionComponent = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -35,6 +38,8 @@ const CelebrityStyle: React.FunctionComponent = () => {
   const { celebrityName } = useSelector(
     (state: RootState) => state.celebrityStyle
   );
+
+ 
 
   const { messages, input, handleInputChange, handleSubmit, isLoading, error } =
     useChatManager("/api/openai");
@@ -185,6 +190,18 @@ const CelebrityStyle: React.FunctionComponent = () => {
                 />
               ))}
           </div>
+        </Box>
+
+        <Box
+          sx={{
+            mt: 4,
+            display: "flex",
+            flexWrap: "wrap",
+            justifyContent: "center",
+            gap: 2,
+          }}
+        >
+         <CelebrityStyleInsight /> 
         </Box>
       </Box>
     </Box>
