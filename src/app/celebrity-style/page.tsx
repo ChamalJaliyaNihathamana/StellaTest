@@ -29,6 +29,8 @@ import {
 } from "@mui/material";
 import CustomTextArea from "@/client/components/CustomTextArea";
 
+
+
 const CelebrityStyle: React.FunctionComponent = () => {
   const dispatch = useDispatch<AppDispatch>();
 
@@ -186,6 +188,7 @@ const CelebrityStyle: React.FunctionComponent = () => {
               ))}
           </div>
         </Box>
+
       </Box>
     </Box>
   );
