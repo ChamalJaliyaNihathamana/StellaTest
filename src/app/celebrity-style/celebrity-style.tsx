@@ -22,52 +22,6 @@ export interface CelebrityStyleInsightProps {
   conclusion: string;
 }
 
-const extractStyleData = (message: string): CelebrityStyleInsightProps => {
-  const styleData: CelebrityStyleInsightProps = {
-    introduction: "",
-    keyElements: [],
-    signatureLooks: [],
-    preferredBrands: [],
-    conclusion: "",
-  };
-
-  const sectionRegex =
-    /(.+?)(?=Key Elements|Signature Looks|Preferred Brands and Designers|Conclusion|$)/gs;
-  const sections = message.match(sectionRegex) || [];
-
-  sections.forEach((section) => {
-    const lines = section.trim().split("\n"); // Trim section and split into lines
-    let sectionName = lines[0].replace(":", "").trim().toLowerCase();
-
-    const remainingLines = lines.slice(1);
-    switch (sectionName) {
-      case "introduction":
-      case "conclusion":
-        styleData[sectionName] = remainingLines.join("\n").trim();
-        break;
-      case "key elements of jennifer lopez's style":
-        sectionName = "keyelements"; // Reassign the value here
-      case "signature looks":
-      case "preferred brands and designers":
-        remainingLines.forEach((line) => {
-          const boldItemMatch = line.match(/\*\*(.*?)\*\*/);
-          if (boldItemMatch) {
-            const [_, itemName] = boldItemMatch;
-            const description = line
-              .replace(boldItemMatch[0], "")
-              .replace(":", "")
-              .trim();
-
-            styleData[sectionName].push({ name: itemName.trim(), description });
-          }
-        });
-        break;
-    }
-  });
-
-  return styleData;
-};
-
 const CelebrityStyleInsight: React.FC = () => {
   // 2. Get celebrity style data from Redux store
   const celebrityStyleDataRaw = useSelector(
@@ -167,12 +121,11 @@ const CelebrityStyleInsight: React.FC = () => {
   };
 
   if (!celebrityStyleData) {
-    return <div>Loading or no celebrity style data available</div>; // Or display a loading indicator
+    return <div>Loading or no celebrity style data available</div>; 
   }
 
-  // 5. Render the UI if data is available
+
   return (
-    // ... (Your component's JSX remains the same, using celebrityStyleData)
     <Box
       sx={{
         width: "100%",
@@ -181,7 +134,7 @@ const CelebrityStyleInsight: React.FC = () => {
         padding: "2rem",
       }}
     >
-      {/* Introduction */}
+    
       <Box sx={{ mb: 3 }}>
         <Typography variant="h5" gutterBottom>
           {/* {celebrityName.toUpperCase()} */}
@@ -192,7 +145,6 @@ const CelebrityStyleInsight: React.FC = () => {
         </Typography>
       </Box>
 
-      {/* Key Elements Carousel */}
       <Box sx={{ display: "flex", justifyContent: "center", width: "100%" }}>
         <Carousel
           autoPlay={true}
@@ -202,27 +154,27 @@ const CelebrityStyleInsight: React.FC = () => {
           sx={{
             width: '40%',
 
-            '& .MuiCard-root': { // Target the card elements
-              backgroundColor: '#f5f5f5', // Light background
-              borderRadius: '12px',      // Rounded corners
-              padding: '1.5rem',         // Increased padding
-              boxShadow: '0px 2px 5px rgba(0, 0, 0, 0.1)', // Subtle shadow
+            '& .MuiCard-root': { 
+              backgroundColor: '#f5f5f5', 
+              borderRadius: '12px',      
+              padding: '1.5rem',    
+              boxShadow: '0px 2px 5px rgba(0, 0, 0, 0.1)', 
             },
-            '& .MuiIconButton-root': { // Target the navigation buttons
-              color: '#333',            // Darker color for better contrast
-              fontSize: '2rem',         // Larger buttons
+            '& .MuiIconButton-root': { 
+              color: '#333',
+              fontSize: '2rem',
               '&:hover': {
-                backgroundColor: 'rgba(0, 0, 0, 0.05)', // Subtle hover effect
+                backgroundColor: 'rgba(0, 0, 0, 0.05)',
               },
             },
-            '& .MuiCarousel-indicators': { // Target the indicators
+            '& .MuiCarousel-indicators': {
               position: 'absolute',
-              bottom: 10,             // Move indicators to the bottom
+              bottom: 10,
               left: '50%',
               transform: 'translateX(-50%)',
             },
             '& .MuiCarousel-indicator': {
-              width: 8,               // Smaller dots
+              width: 8,
               height: 8,
               borderRadius: '50%',
             },
@@ -241,9 +193,8 @@ const CelebrityStyleInsight: React.FC = () => {
         </Carousel>
       </Box>
 
-      {/* Signature Looks & Preferred Brands */}
+     
       <Box sx={{ display: "flex", gap: 2, mt: 3 }}>
-        {/* Signature Looks List */}
         <Box sx={{ flex: 1 }}>
           <Typography variant="h5" gutterBottom>
             Signature Looks
@@ -261,7 +212,7 @@ const CelebrityStyleInsight: React.FC = () => {
           </List>
         </Box>
 
-        {/* Preferred Brands List */}
+
         <Box sx={{ flex: 1 }}>
           <Typography variant="h5" gutterBottom>
             Preferred Brands
@@ -280,7 +231,7 @@ const CelebrityStyleInsight: React.FC = () => {
         </Box>
       </Box>
 
-      {/* Conclusion */}
+
       <Box sx={{ mt: 3 }}>
         <Typography variant="h5" gutterBottom>
           Conclusion

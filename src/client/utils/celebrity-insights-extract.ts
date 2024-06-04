@@ -66,3 +66,49 @@ export const parseCelebrityStyleData = (messageContent: string): CelebrityStyleI
 
   return data;
 };
+
+export const extractStyleData = (message: string): CelebrityStyleInsightProps => {
+  const styleData: CelebrityStyleInsightProps = {
+    introduction: "",
+    keyElements: [],
+    signatureLooks: [],
+    preferredBrands: [],
+    conclusion: "",
+  };
+
+  const sectionRegex =
+    /(.+?)(?=Key Elements|Signature Looks|Preferred Brands and Designers|Conclusion|$)/gs;
+  const sections = message.match(sectionRegex) || [];
+
+  sections.forEach((section) => {
+    const lines = section.trim().split("\n"); // Trim section and split into lines
+    let sectionName = lines[0].replace(":", "").trim().toLowerCase();
+
+    const remainingLines = lines.slice(1);
+    switch (sectionName) {
+      case "introduction":
+      case "conclusion":
+        styleData[sectionName] = remainingLines.join("\n").trim();
+        break;
+      case "key elements of jennifer lopez's style":
+        sectionName = "keyelements"; // Reassign the value here
+      case "signature looks":
+      case "preferred brands and designers":
+        remainingLines.forEach((line) => {
+          const boldItemMatch = line.match(/\*\*(.*?)\*\*/);
+          if (boldItemMatch) {
+            const [_, itemName] = boldItemMatch;
+            const description = line
+              .replace(boldItemMatch[0], "")
+              .replace(":", "")
+              .trim();
+
+            styleData[sectionName].push({ name: itemName.trim(), description });
+          }
+        });
+        break;
+    }
+  });
+
+  return styleData;
+};

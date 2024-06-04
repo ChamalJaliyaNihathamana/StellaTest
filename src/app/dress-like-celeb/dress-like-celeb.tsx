@@ -1,3 +1,4 @@
+// dress-like-celeb/dress-like-celeb.tsx
 "use client";
 import {
   Typography,
@@ -13,7 +14,6 @@ import {
 import React from "react";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
-// dress-like-celeb/dress-like-celeb.tsx
 interface DressLikeCelebInsightsProps {
   celebrityName: string;
   introduction: string;

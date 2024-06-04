@@ -145,7 +145,6 @@ const CelebComparisonInsights: React.FunctionComponent = () => {
             width: "40%",
 
             "& .MuiCard-root": {
-              // Target the card elements
               backgroundColor: "#f5f5f5", // Light background
               borderRadius: "12px", // Rounded corners
               padding: "1.5rem", // Increased padding
@@ -238,7 +237,6 @@ const CelebComparisonInsights: React.FunctionComponent = () => {
         ))}
       </Box>
 
-      {/* Recommendations */}
       <Box sx={{ my: 4 }}>
         <Typography variant="h5" gutterBottom>
           Recommendations
@@ -267,8 +265,6 @@ const CelebComparisonInsights: React.FunctionComponent = () => {
         ))}
       </Box>
 
-      {/* Integration Tips */}
-
       <Box sx={{ my: 4 }}>
         <Typography variant="h5" gutterBottom>
           Tips on How to Mix and Match Items
@@ -285,8 +281,6 @@ const CelebComparisonInsights: React.FunctionComponent = () => {
         </List>
       </Box>
 
-      {/* Additional Notes */}
-
       <Box sx={{ mt: 3 }}>
         <Typography variant="h5" gutterBottom>
           Additional Notes
@@ -295,18 +289,6 @@ const CelebComparisonInsights: React.FunctionComponent = () => {
           {celebComparisonData.additionalNotes}
         </Typography>
       </Box>
-      {/* <Box sx={{ my: 4 }}>
-        <Typography variant="h5" gutterBottom>
-          Additional Notes
-        </Typography>
-        <List dense disablePadding>
-          {celebComparisonData.additionalNotes.map((note, index) => (
-            <ListItem key={index} sx={{ display: "list-item" }}>
-              <ListItemText primary={note} />
-            </ListItem>
-          ))}
-        </List>
-      </Box> */}
     </Box>
   );
 };

@@ -240,7 +240,6 @@ const CapsuleProfessionInsights: React.FunctionComponent = () => {
         {capsuleProfessionData.introduction}
       </Typography>
 
-      {/* Capsule Wardrobe */}
       <Box sx={{ my: 4 }}>
         <Typography variant="h5" gutterBottom >
           Capsule Wardrobe
@@ -251,7 +250,6 @@ const CapsuleProfessionInsights: React.FunctionComponent = () => {
                 <Grid item xs={12} sm={6} md={4} lg={4} key={item.name}>
                 <Card>
                   <CardContent sx={{ display: 'flex', alignItems: 'center' }}>
-                    {/* Use next/image for SVGs */}
                     <Image 
                       src={getIconForCategory(category.category)} 
                       alt={`${category.category} icon`} 
@@ -299,7 +297,6 @@ const CapsuleProfessionInsights: React.FunctionComponent = () => {
         ))}
       </Box>
 
-      {/* Accessories and Essentials */}
       <Box sx={{ my: 4 }}>
         <Typography variant="h5" gutterBottom>
           Accessories and Essentials
@@ -326,7 +323,6 @@ const CapsuleProfessionInsights: React.FunctionComponent = () => {
         )}
       </Box>
 
-      {/* Mix and Match Tips */}
       <Box sx={{ my: 4 }}>
         <Typography variant="h5" gutterBottom>
           Tips on How to Mix and Match Items
