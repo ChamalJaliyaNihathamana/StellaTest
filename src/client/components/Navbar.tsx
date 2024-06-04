@@ -34,6 +34,10 @@ const links = [
     label: "Outfit Recommendations for Vacation",
     href: "/recommendation-outfit-vacation",
   },
+  {
+    label: "Fashion Insights",
+    href: "/fashion-insights",
+  },
 ];
 
 const linksPerRow = 5; // Number of links to show initially

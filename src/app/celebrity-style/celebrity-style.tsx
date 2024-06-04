@@ -1,3 +1,4 @@
+// celebrity-style/celebrity-style.tsx
 import * as React from "react";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
@@ -183,7 +184,8 @@ const CelebrityStyleInsight: React.FC = () => {
       {/* Introduction */}
       <Box sx={{ mb: 3 }}>
         <Typography variant="h5" gutterBottom>
-          {celebrityName.toUpperCase()}
+          {/* {celebrityName.toUpperCase()} */}
+          Anne Harthaway
         </Typography>
         <Typography variant="body1">
           {celebrityStyleData.introduction}
