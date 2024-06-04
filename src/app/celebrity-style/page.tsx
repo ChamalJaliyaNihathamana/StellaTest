@@ -38,8 +38,6 @@ const CelebrityStyle: React.FunctionComponent = () => {
     (state: RootState) => state.celebrityStyle
   );
 
- 
-
   const { messages, input, handleInputChange, handleSubmit, isLoading, error } =
     useChatManager("/api/openai");
   const [showInput, setShowInput] = useState(true);
@@ -191,7 +189,6 @@ const CelebrityStyle: React.FunctionComponent = () => {
           </div>
         </Box>
 
-      
       </Box>
     </Box>
   );
