@@ -15,6 +15,7 @@ import {
 import celebrityStyleSlice from "./features/celebrity-style/celebrityStyleSlice";
 import userProfileSlice from "./features/user-profile/userProfileSlice";
 import fashionInsightsSlice from "./features/fashion-insights/fashionInsightsSlice";
+import chatSlice from "./features/chat/chatSlice";
 
 const persistConfig = {
   key: "root",
@@ -25,6 +26,7 @@ const appReducer = combineReducers({
   celebrityStyle: celebrityStyleSlice,
   userProfile: userProfileSlice,
   fashionInsights: fashionInsightsSlice,
+  chat:chatSlice
 });
 
 const rootReducer = (state: any, action: any) => {

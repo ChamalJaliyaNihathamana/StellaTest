@@ -2,14 +2,26 @@
 import React from "react";
 import TextField from "@mui/material/TextField";
 import { styled } from "@mui/material/styles";
+import { color } from "framer-motion";
 
 // Define your custom styling
 const StyledTextField = styled(TextField)({
-  "& label.Mui-focused": {
-    color: "gray",
+"& label.Mui-focused": {
+    color: "primary.main", // Changed to primary color on focus
   },
   "& .MuiInput-underline:after": {
     borderBottomColor: "blue",
+  },
+  "& .MuiInputLabel-outlined": {
+    "&.Mui-focused": {
+      transform: "translate(12px, -9px) scale(0.75)",
+      "&.MuiInputLabel-shrink": {
+        backgroundColor: "white",
+        padding: "2px 12px", // Optional padding for the label
+        border: "1px solid #808080", // Optional border for the label
+        borderRadius: 2, // Optional rounded corners
+      },
+    },
   },
   "& .MuiOutlinedInput-root": {
     "& fieldset": {
@@ -21,8 +33,12 @@ const StyledTextField = styled(TextField)({
     "&.Mui-focused fieldset": {
       borderColor: "blue",
     },
+    // Add this to set the background color of the input field
+    "& .MuiInputBase-input": {
+      backgroundColor: "white", 
+    },
   },
-});
+})
 
 interface CustomTextFieldProps {
   label: string;
@@ -34,6 +50,7 @@ interface CustomTextFieldProps {
   onFocus?: (event: React.FocusEvent<HTMLInputElement>) => void;
   readOnly?: boolean;
   defaultValue?: string;
+  fullWidth?: boolean
   // Add more props as needed (e.g., error, helperText, variant, etc.)
 }
 
@@ -47,6 +64,7 @@ const CustomTextField: React.FC<CustomTextFieldProps> = ({
   onFocus,
   onBlur,
   defaultValue,
+  fullWidth=true,
   ...rest
 }) => {
   return (
@@ -55,6 +73,7 @@ const CustomTextField: React.FC<CustomTextFieldProps> = ({
       value={value}
       onChange={onChange}
       onClick={onClick}
+      fullWidth={fullWidth}
       onFocus={onFocus}
       onBlur={onBlur}
       defaultValue={defaultValue}

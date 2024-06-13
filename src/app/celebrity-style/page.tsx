@@ -23,13 +23,12 @@ import CustomButton from "@/client/components/CustomButton";
 import CustomTextField from "@/client/components/CustomTextField";
 import {
   Box,
-  ButtonGroup,
   CircularProgress,
-  FormHelperText,
+  Container,
+  Grid,
+  Typography,
 } from "@mui/material";
 import CustomTextArea from "@/client/components/CustomTextArea";
-
-
 
 const CelebrityStyle: React.FunctionComponent = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -128,26 +127,92 @@ const CelebrityStyle: React.FunctionComponent = () => {
   };
 
   return (
-    <Box>
-      <h3 className="pt-20">Celebrity Style Analyzer</h3>
-      <Box
-        sx={{
-          padding: 2,
-          border: "2px solid",
-          borderColor: "rgb(210,210,210)",
-        }}
-      >
-        <Box
-          component="form"
-          sx={{
-            "& .MuiTextField-root": { m: 1, width: "100%" },
-            "& .MuiButton-root": { m: 1, width: "20ch" },
-          }}
-          noValidate
-          autoComplete="off"
-          onSubmit={handleSubmitWithLoading}
-        >
-          <div>
+    <Container maxWidth="md">
+      <Box className="container mx-auto p-4" p={4}>
+        <Typography variant="h5" component="h1" gutterBottom>
+          Celebrity Style Analyser
+        </Typography>
+
+        <Box mt={4} display="flex" alignItems="center">
+          <form onSubmit={handleSubmitWithLoading}>
+            <Grid container spacing={2}>
+              {showInput ? (
+                <Grid item xs={12}>
+                  <CustomTextField
+                    label={"celebrity name"}
+                    placeholder="enter celebrity name"
+                    value={input}
+                    onChange={handleInputChange}
+                  />
+                </Grid>
+              ) : (
+                <Grid item xs={12}>
+                  <CustomTextField
+                    label={"celebrity name"}
+                    value={celebrityName}
+                    readOnly
+                    onClick={() => setShowInput(true)}
+                    fullWidth={true}
+                  />
+                </Grid>
+              )}
+
+              <Grid item xs={12}>
+                <CustomButton
+                  type="submit"
+                  color="customBlack"
+                  disabled={isLoading || LLMPipeLoading}
+                >
+                  {isLoading || LLMPipeLoading ? "Generating..." : "Generate"}
+                </CustomButton>
+              </Grid>
+            </Grid>
+          </form>
+        </Box>
+        {isLoading || LLMPipeLoading ? (
+          <Box mt={2} display="flex" alignItems="center">
+            <CircularProgress color="warning" />
+            <Typography variant="body1" ml={2}>
+              Building...
+            </Typography>
+          </Box>
+        ) : error ? (
+          <Typography variant="body1" color="error" mt={2}>
+            {error}
+          </Typography>
+        ) : (
+          messages &&
+          messages.length > 0 && (
+            <Box mt={2}>
+              {messages
+                .filter((m) => m.role === "assistant")
+                .map((m) => (
+                  <CustomTextArea
+                    showLabel={false}
+                    key={m.id}
+                    label="AI Response"
+                    value={m.content}
+                    sx={{ mb: 2, width: "calc(100% - 16px)" }}
+                  />
+                ))}
+            </Box>
+          )
+        )}
+
+        {/* <Box
+            display="flex"
+            alignItems="center"
+            mt={4}
+            component="form"
+            sx={{
+              "& .MuiTextField-root": { mb: 2, width: "100%" },
+              "& .MuiButton-root": { mb: 2, width: "20ch" },
+            }}
+            noValidate
+            autoComplete="off"
+            onSubmit={handleSubmitWithLoading}
+          >
+            
             {showInput ? (
               <CustomTextField
                 label={"Celebrity Name"}
@@ -165,32 +230,47 @@ const CelebrityStyle: React.FunctionComponent = () => {
                 />
               </div>
             )}
-            {isLoading || LLMPipeLoading ? (
-              <CircularProgress />
-            ) : (
-              <ButtonGroup>
-                <CustomButton type="submit" disabled={isLoading}>
-                  {isLoading ? "Generating..." : "Generate"}
-                </CustomButton>
-              </ButtonGroup>
-            )}
-            {error && <FormHelperText>{error}</FormHelperText>}
-            {messages
-              .filter((m) => m.role === "assistant")
-              .map((m) => (
-                <CustomTextArea
-                  showLabel={false}
-                  key={m.id}
-                  label="AI Response"
-                  value={m.content}
-                  sx={{ m: 1, width: "calc(100% - 16px)" }}
-                />
-              ))}
-          </div>
-        </Box>
 
+            <CustomButton
+              type="submit"
+              color="customBlack"
+              disabled={isLoading || LLMPipeLoading}
+            >
+              {isLoading || LLMPipeLoading ? "Generating..." : "Generate"}
+            </CustomButton>
+
+            {isLoading || LLMPipeLoading ? (
+              <Box mt={2} display="flex" alignItems="center">
+                <CircularProgress color="warning" />
+                <Typography variant="body1" ml={2}>
+                  Building...
+                </Typography>
+              </Box>
+            ) : error ? (
+              <Typography variant="body1" color="error" mt={2}>
+                {error}
+              </Typography>
+            ) : (
+              messages &&
+              messages.length > 0 && (
+                <Box>
+                  {messages
+                    .filter((m) => m.role === "assistant")
+                    .map((m) => (
+                      <CustomTextArea
+                        showLabel={false}
+                        key={m.id}
+                        label="AI Response"
+                        value={m.content}
+                        sx={{ mb: 2, width: "calc(100% - 16px)" }}
+                      />
+                    ))}
+                </Box>
+              )
+            )}
+          </Box> */}
       </Box>
-    </Box>
+    </Container>
   );
 };
 

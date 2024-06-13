@@ -14,13 +14,14 @@ import { recommendNewAccessoryPrompt } from "@/client/prompts/recommendNewAccess
 // ui
 import CustomButton from "@/client/components/CustomButton";
 import CustomTextArea from "@/client/components/CustomTextArea";
-import CustomTextField from "@/client/components/CustomTextField";
 import {
   Box,
-  ButtonGroup,
   CircularProgress,
-  FormHelperText,
+  Container,
+  Grid,
+  Typography,
 } from "@mui/material";
+import CustomTextField from "@/client/components/CustomTextField";
 
 interface RecommendationAccessoryProps {}
 
@@ -54,89 +55,90 @@ const RecommendationAccessory: React.FunctionComponent<
     e: React.FormEvent<HTMLFormElement>
   ) => {
     e.preventDefault();
-    dispatch(SET_CURRENT_DATA_TYPE(FashionInsightDataType.ACCESSORY_RECOMMENDATION));
+    dispatch(
+      SET_CURRENT_DATA_TYPE(FashionInsightDataType.ACCESSORY_RECOMMENDATION)
+    );
     handleSubmit(e);
   };
 
   return (
-    <Box>
-      <h3 className="pt-20">Accessory Recommendations</h3>
+    <Container maxWidth="md">
+      <Box className="container mx-auto p-4" p={4}>
+        <Typography variant="h5" component="h1" gutterBottom>
+          New Accessory Recommendation
+        </Typography>
 
-      <Box
-        sx={{
-          padding: 2,
-          border: "2px solid",
-          borderColor: "rgb(210,210,210)",
-        }}
-      >
-        <Box
-          component="form"
-          sx={{
-            "& .MuiTextField-root": {
-              m: 1,
-              width: "100%",
-            },
-            "& .MuiTextareaAutosize-root": {
-              m: 1,
-              width: "calc(100% - 16px)",
-            },
-            "& .MuiButton-root": { m: 1, width: "auto" }, // Auto-width for button
-          }}
-          noValidate
-          autoComplete="off"
-          onSubmit={handleSubmitRecommendationAccessory}
-        >
-          <div>
-            <CustomTextField
-              label={"Celebrity Name"}
-              value={celebrityName}
-              readOnly={true}
-            />
-            <CustomTextArea
-              label={"Celebrity Style Data"}
-              placeholder="Enter celebrity style data"
-              value={celebrityStyleData}
-              sx={{ m: 1, width: "calc(100% - 16px)" }}
-            />
-            <CustomTextArea
-              label={"Existing Wardrobe"}
-              value={existingWardrobe}
-              placeholder="Enter existing wardrobe"
-              sx={{ m: 1, width: "calc(100% - 16px)" }}
-            />
-            {/* <CustomTextArea
-              label={"Prompt"}
-              placeholder="8 Ways to Dress like Celeb X"
-              value={input}
-              onChange={handleInputChange}
-              sx={{ m: 1, width: "calc(100% - 16px)" }}
-              hidden={true}
-            /> */}
-            {isLoading ? (
-              <CircularProgress />
-            ) : (
-              <ButtonGroup>
-                <CustomButton type="submit" disabled={isLoading}>
+        <Box mt={4} display="flex" alignItems="center">
+          <form onSubmit={handleSubmitRecommendationAccessory}>
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <CustomTextField
+                  label={"celebrity name"}
+                  value={celebrityName}
+                  readOnly={true}
+                  fullWidth={true}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <CustomTextArea
+                  label={"celebrity style data"}
+                  placeholder="enter celebrity style data"
+                  value={celebrityStyleData}
+                  sx={{ mb: 2, width: "calc(100% - 16px)" }}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <CustomTextArea
+                  label={"existing wardrobe"}
+                  value={existingWardrobe}
+                  placeholder="enter existing wardrobe"
+                  sx={{ mb: 2, width: "calc(100% - 16px)" }}
+                />
+              </Grid>
+
+              <Grid item xs={12}>
+                <CustomButton
+                  type="submit"
+                  color="customBlack"
+                  disabled={isLoading}
+                >
                   {isLoading ? "Generating..." : "Generate"}
                 </CustomButton>
-              </ButtonGroup>
-            )}
-            {error && <FormHelperText>{error}</FormHelperText>}
-            {messages
-              .filter((m) => m.role === "assistant")
-              .map((m) => (
-                <CustomTextArea
-                  key={m.id}
-                  showLabel={false}
-                  label="AI Response"
-                  value={m.content}
-                  sx={{ m: 1, width: "calc(100% - 16px)" }}
-                />
-              ))}
-          </div>
+              </Grid>
+            </Grid>
+          </form>
         </Box>
+        {isLoading ? (
+          <Box mt={2} display="flex" alignItems="center">
+            <CircularProgress color="warning" />
+            <Typography variant="body1" ml={2}>
+              Building...
+            </Typography>
+          </Box>
+        ) : error ? (
+          <Typography variant="body1" color="error" mt={2}>
+            {error}
+          </Typography>
+        ) : (
+          messages &&
+          messages.length > 0 && (
+            <Box mt={2}>
+              {messages
+                .filter((m) => m.role === "assistant")
+                .map((m) => (
+                  <CustomTextArea
+                    showLabel={false}
+                    key={m.id}
+                    label="AI Response"
+                    value={m.content}
+                    sx={{ mb: 2, width: "calc(100% - 16px)" }}
+                  />
+                ))}
+            </Box>
+          )
+        )}
       </Box>
-    </Box>
+    </Container>
   );
 };
 

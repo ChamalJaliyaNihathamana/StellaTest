@@ -14,11 +14,13 @@ import Button from "@mui/material/Button";
 import Link from "next/link";
 import Box from "@mui/material/Box";
 import DownloadIcon from "@mui/icons-material/Download";
-import RestartAltIcon from '@mui/icons-material/RestartAlt';
+import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import { IconButton, Tooltip, Typography } from "@mui/material";
+import Image from "next/image";
 
 const links = [
   { label: "Video Onboard", href: "/" },
+  { label: "Explore My Wardrobe", href: "/my-closet" },
   { label: "Celebrity Style Analyzer", href: "/celebrity-style" },
   // { label: "LLM Input Combiner", href: "/llm-combiner" },
   { label: "8 Ways to Dress like Celeb X", href: "/dress-like-celeb" },
@@ -40,11 +42,9 @@ const links = [
   },
 ];
 
-const linksPerRow = 5; // Number of links to show initially
-
 export default function Navbar() {
   const dispatch = useDispatch();
-  
+
   const fashionInsights = useSelector(
     (state: RootState) => state.fashionInsights.data
   );
@@ -52,9 +52,17 @@ export default function Navbar() {
     (state: RootState) => state.celebrityStyle.celebrityName
   );
 
+  const [windowWidth, setWindowWidth] = React.useState(0);
+
+  React.useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    handleResize(); // Initial width
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   const [showMore, setShowMore] = React.useState(false);
   const pathname = usePathname();
-  const visibleLinks = showMore ? links : links.slice(0, linksPerRow);
 
   const insightTypeToHeading: { [key in FashionInsightDataType]: string } = {
     [FashionInsightDataType.CELEBRITY_STYLE_DATA]: "Celebrity Style Data",
@@ -70,6 +78,8 @@ export default function Navbar() {
     [FashionInsightDataType.OUTFIT_RECOMMENDATION_OCCASION]:
       "Outfit Recommendation for Occasion",
   };
+
+  const navBarRef = React.useRef<HTMLDivElement>(null);
 
   const generatePDF = () => {
     const doc = new jsPDF();
@@ -115,63 +125,77 @@ export default function Navbar() {
   const handleFlushState = () => {
     dispatch({ type: "RESET_ALL" });
   };
+
+  // const visibleLinks = showMore ? links : links.slice(0, -1); // Exclude last link initially
+
   return (
     <AppBar position="static" sx={{ backgroundColor: "black" }}>
-      <Toolbar>
-        <Box sx={{ display: "flex", alignItems: "center", width: "100%" }}>
-          {/* <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            Stella AI
-          </Typography> */}
-          <Box sx={{ display: "flex", flexWrap: "wrap" }}>
-            {visibleLinks.map((link) => (
-              <Link key={link.href} href={link.href} passHref legacyBehavior>
-                <Button
-                  color={pathname === link.href ? "warning" : "inherit"}
-                  sx={{
-                    m: 0.5,
-                    borderLeft: "1px solid white",
-                    "&:first-of-type": { borderLeft: "none" }, // Remove border on first link
-                  }}
-                >
-                  {link.label}
-                </Button>
-              </Link>
-            ))}
-          </Box>
-
-          <Box sx={{ ml: "auto", display: "flex" }}>
-            <Tooltip title="Download Fashion Insights">
-              <IconButton
-                onClick={generatePDF}
+      <Toolbar sx={{ justifyContent: "space-between", padding: 0 }}>
+        {" "}
+        {/* Remove default padding */}
+        <Box
+          sx={{
+            display: "flex",
+            overflowX: "auto",
+            width: "100%",
+            // borderBottom: "1px solid rgba(255, 255, 255, 0.12)", // Add bottom border
+            paddingBottom: 1, // Add padding to accommodate scrollbar
+            paddingTop: 2, // Add padding to accommodate scrollbar
+            "&::-webkit-scrollbar": {
+              height: 4, // Further reduce scrollbar height
+              backgroundColor: "transparent", // Make background transparent
+            },
+            "&::-webkit-scrollbar-thumb": {
+              backgroundColor: "warning.main",
+              borderRadius: 2,
+              width: 2, // Further reduce indicator width
+            },
+          }}
+        >
+          {/* <Box sx={{ ml: "auto", display: "flex" }}>
+           
+            <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+              Stella AI
+            </Typography>
+          </Box> */}
+          {links.map((link, index) => (
+            <Link key={link.href} href={link.href} passHref legacyBehavior>
+              <Button
+                color={pathname === link.href ? "warning" : "inherit"}
                 sx={{
-                  color: "white",
-                  "&:hover": {
-                    color: "warning.main",
-                  },
+                  m: 0.5,
+                  border: "none",
+                  flex: "none",
+                  minWidth: 0,
+                  whiteSpace: "nowrap",
+                  textTransform: "none",
+                  fontSize: { xs: "0.7rem", sm: "0.875rem" },
+                  borderLeft: "1px solid white",
+                  "&:first-of-type": { borderLeft: "none" },
                 }}
               >
-                <DownloadIcon />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Flush State">
-              <IconButton
-                onClick={handleFlushState}
-                sx={{
-                  color: "white",
-                  "&:hover": {
-                    color: "warning.main",
-                  },
-                }}
-              >
-                <RestartAltIcon />
-              </IconButton>
-            </Tooltip>
-            {links.length > linksPerRow && (
-              <Button color="inherit" onClick={handleShowMoreClick}>
-                {showMore ? "Show Less" : "Show More"}
+                {link.label}
               </Button>
-            )}
-          </Box>
+            </Link>
+          ))}
+        </Box>
+        <Box sx={{ ml: "auto", display: "flex", pl: 2 }}>
+          <Tooltip title="Download Fashion Insights">
+            <IconButton
+              onClick={generatePDF}
+              sx={{ color: "white", "&:hover": { color: "warning.main" } }}
+            >
+              <DownloadIcon />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Flush State">
+            <IconButton
+              onClick={handleFlushState}
+              sx={{ color: "white", "&:hover": { color: "warning.main" } }}
+            >
+              <RestartAltIcon />
+            </IconButton>
+          </Tooltip>
         </Box>
       </Toolbar>
     </AppBar>
