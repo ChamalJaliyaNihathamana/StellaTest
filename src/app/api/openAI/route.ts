@@ -10,6 +10,7 @@ const openai = new OpenAI({
 
 export async function POST(request: Request) {
   const { messages } = await request.json();
+  
   const stream= true
 
   const response = await openai.chat.completions.create({
