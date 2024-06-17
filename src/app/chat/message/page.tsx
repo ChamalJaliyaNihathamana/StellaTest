@@ -11,6 +11,7 @@ import {
   InputAdornment,
   Slide,
   Typography,
+  Stack,
 } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
 import { Message, useChat } from "ai/react";
@@ -25,22 +26,25 @@ import {
 } from "@/lib/features/chat/chatSlice";
 
 import ChatMessage from "@/client/components/chatMessage";
+import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 
 interface ChatMessageProps {
   isChatOpen: boolean;
+  setShowChatPage: (value: boolean) => void;
 }
 
-const ChatMessagePage: React.FC<ChatMessageProps> = ({ isChatOpen }) => {
+const ChatMessagePage: React.FC<ChatMessageProps> = ({
+  isChatOpen,
+  setShowChatPage,
+}) => {
   const dispatch = useDispatch();
 
   // Get state from chat slice
-  const { messages: reduxMessages, input } = useSelector(
-    (state: RootState) => state.chat
-  );
+  const { input } = useSelector((state: RootState) => state.chat);
 
-  const { messages, append, isLoading, error } = useChat({
+  const { messages, append, isLoading, error, setInput } = useChat({
     api: "/api/openai",
-    initialMessages: reduxMessages,
+    // initialMessages: reduxMessages,
     onError: (error) => {
       dispatch(setError(error.message));
     },
@@ -54,61 +58,139 @@ const ChatMessagePage: React.FC<ChatMessageProps> = ({ isChatOpen }) => {
     }
   }, [messages]);
 
+  useEffect(() => {
+    // Scroll to the bottom whenever messages change
+    scrollToBottom();
+  }, [messages]);
+
+  const scrollToBottom = () => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollTop = messagesEndRef.current.scrollHeight;
+    }
+  };
+
+  const handleGoBack = () => {
+    setShowChatPage(false); // Call the function to update the state
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     dispatch(updateInput(e.target.value));
   };
 
+  function createWardrobeContextMessage(
+    wardrobeEmbeddings: { itemId: string; embedding: number[] }[]
+  ) {
+    let messageContent = "User's existing wardrobe items:\n";
+    wardrobeEmbeddings.forEach((item) => {
+      messageContent += `- ${item.itemId}\n`;
+    });
+
+    return {
+      id: crypto.randomUUID(),
+      role: "system", // Or potentially "assistant" depending on your setup
+      content: messageContent,
+    };
+  }
+
   const handleSend = async () => {
-    if (!input.trim() || isLoading) return; // Don't send if empty or loading
+    if (!input.trim() || isLoading) return;
 
     dispatch(setIsLoading(true));
 
+    // 1. Prepare User's Message
     const userMessage: Message = {
       id: crypto.randomUUID(),
       role: "user",
       content: input,
     };
 
-    dispatch(addMessage(userMessage));
-    dispatch(updateInput(""));
+    // 2. (Optional) Fetch and Append Wardrobe Embeddings (only if input is not empty)
+    let contextualMessage = null;
+    if (input.trim() !== "") {
+      const response = await fetch("/api/pinecone", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          method: "fetchWardrobeEmbeddings",
+          data: { query: input },
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch wardrobe embeddings");
+      }
+
+      const wardrobeEmbeddings = await response.json();
+      contextualMessage = createWardrobeContextMessage(wardrobeEmbeddings);
+    }
 
     try {
-      const newMessage = await append(userMessage);
-      dispatch(addMessage(newMessage));
+      // If there's a contextual message, append that first
+      if (contextualMessage) {
+        await append(contextualMessage);
+      }
+
+      // Now append the user's message and get the AI's response
+      const aiMessage = await append(userMessage);
     } catch (error) {
       dispatch(setError((error as Error).message || "Failed to fetch message"));
       console.error("Error while fetching message:", error);
-    } finally {
-      dispatch(setIsLoading(false));
     }
-  };
 
+    // 4. Update UI and State
+    dispatch(updateInput(""));
+    dispatch(setIsLoading(false));
+  };
   return (
-    <Box>
+    <Box
+      sx={{
+        position: "relative",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
       <Box
-        className="pt-5 pb-3 pl-4 pr-16 bg-gray-100 "
+        className="pt-5 pb-3 pl-4 pr-16 bg-gray-100"
         sx={{
           borderBottom: "1px solid #e0e0e0",
+          display: "flex",
+          alignItems: "center", // Align items vertically to center
         }}
       >
-        <Typography variant="h6" className="text-left text-white">
-          {" "}
-          {/* White text */}
-          <span>Chat 🧑‍🚀</span>
-        </Typography>
+        <Stack direction="row" alignItems="center" spacing={1}>
+          <IconButton onClick={handleGoBack} color="inherit">
+            <ChevronLeftIcon />
+          </IconButton>
+          <Typography variant="h6" className="text-left text-white">
+            <span>Chat 🧑‍🚀</span>
+          </Typography>
+        </Stack>
       </Box>
-
       <Box
-        sx={{ maxHeight: "calc(100vh - 250px)", padding: 2 }}
         ref={messagesEndRef}
+        sx={{ flexGrow: 1, overflowY: "auto", padding: 2 }}
       >
-        {messages.map((message, index) => (
-          <ChatMessage key={index} message={message} />
-        ))}
+        {messages
+          // .filter((m) => m.role === "assistant")
+          .map((message, index) => (
+            <ChatMessage key={index} message={message} />
+          ))}
       </Box>
 
       {/* Input Area (Styled like the reference image) */}
-      <Box p={2} sx={{ display: "flex", alignItems: "center" }}>
+      <Box
+        p={2}
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          mt: "auto", // Push to bottom with flexbox
+          bgcolor: "grey.100",
+          p: 2,
+          borderRadius: 1,
+          borderTop: "1px solid #e0e0e0",
+        }}
+      >
         <TextField
           fullWidth
           value={input}

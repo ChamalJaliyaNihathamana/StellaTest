@@ -13,8 +13,9 @@ import MessageIcon from "@mui/icons-material/Message";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 
 import ChatHelp from "./help/page";
-import ChatMessagePage from "./message/page";
 import ChatHome from "./home/page";
+import ChatHistory from "./chat-history/page";
+import ChatMessagePage from "./message/page";
 
 interface ChatProps {
   isChatOpen: boolean;
@@ -24,8 +25,11 @@ const Chat: React.FunctionComponent<ChatProps> = ({ isChatOpen = false }) => {
   const chatRef = useRef<HTMLDivElement | null>(null);
   const [currentTab, setCurrentTab] = useState("home");
 
+  const [showChatPage, setShowChatPage] = useState(false);
+
   const handleTabChange = (event: React.SyntheticEvent, newValue: string) => {
     setCurrentTab(newValue);
+    setShowChatPage(false); // Hide ChatMessagePage if another tab is selected
   };
   return (
     <Box className="fixed bottom-4 right-4 z-50">
@@ -48,57 +52,76 @@ const Chat: React.FunctionComponent<ChatProps> = ({ isChatOpen = false }) => {
                 }}
               ></Box>
 
-              <Box p={2} sx={{ height: "60vh", overflowY: "auto" }} ref={chatRef}>
-                {currentTab === "help" && <ChatHelp isChatOpen={isChatOpen} />}
-                {currentTab === "home" && <ChatHome isChatOpen={isChatOpen} />}
-                {currentTab === "message" && (
-                  <ChatMessagePage isChatOpen={isChatOpen} />
+              <Box
+                p={2}
+                sx={{ height: "60vh", overflowY: "auto" }}
+                ref={chatRef}
+              >
+                {showChatPage ? ( // Conditionally render ChatMessagePage
+                  <ChatMessagePage isChatOpen={isChatOpen} setShowChatPage={setShowChatPage} />
+                ) : (
+                  <>
+                    {currentTab === "help" && (
+                      <ChatHelp isChatOpen={isChatOpen} />
+                    )}
+                    {currentTab === "home" && (
+                      <ChatHome isChatOpen={isChatOpen} />
+                    )}
+                    {currentTab === "message" && (
+                      <ChatHistory
+                        isChatOpen={isChatOpen}
+                        onSendMessage={() => setShowChatPage(true)}
+                      /> // Pass onSendMessage prop
+                    )}
+                  </>
                 )}
               </Box>
 
               {/* Footer */}
-              <BottomNavigation
-                showLabels={false}
-                value={currentTab}
-                onChange={handleTabChange}
-                sx={{
-                  position: "absolute",
-                  bottom: 0,
-                  width: "100%",
-                  backgroundColor: "black", // Match Vercel green
-                  "& .MuiBottomNavigationAction-root": {
-                    color: "#f0fff4", // Consistent icon color
-                    "&.Mui-selected": {
-                      color: "white", // Active icon color (white)
-                    },
-                    minWidth: 80, // Set a minimum width for each icon button
-                    "& .MuiBottomNavigationAction-icon": {
-                      // Target the icon container
-                      minWidth: "auto",
-                      "& > .MuiSvgIcon-root": {
-                        fontSize: 32, // Increase icon size
+              {showChatPage ? null : (
+                <BottomNavigation
+                  showLabels={false}
+                  value={currentTab}
+                  onChange={handleTabChange}
+                  sx={{
+                    position: "absolute",
+                    bottom: 0,
+                    width: "100%",
+                    backgroundColor: "black", // Match Vercel green
+                    "& .MuiBottomNavigationAction-root": {
+                      color: "#f0fff4", // Consistent icon color
+                      "&.Mui-selected": {
+                        color: "white", // Active icon color (white)
+                      },
+                      minWidth: 80, // Set a minimum width for each icon button
+                      "& .MuiBottomNavigationAction-icon": {
+                        // Target the icon container
+                        minWidth: "auto",
+                        "& > .MuiSvgIcon-root": {
+                          fontSize: 32, // Increase icon size
+                        },
                       },
                     },
-                  },
-                  height: 60, // Increased height
-                }}
-              >
-                <BottomNavigationAction
-                  label="Home"
-                  value="home"
-                  icon={<HomeIcon />}
-                />
-                <BottomNavigationAction
-                  label="Chat"
-                  value="message"
-                  icon={<MessageIcon />}
-                />
-                <BottomNavigationAction
-                  label="Help"
-                  value="help"
-                  icon={<HelpOutlineIcon />}
-                />
-              </BottomNavigation>
+                    height: 60, // Increased height
+                  }}
+                >
+                  <BottomNavigationAction
+                    label="Home"
+                    value="home"
+                    icon={<HomeIcon />}
+                  />
+                  <BottomNavigationAction
+                    label="Chat"
+                    value="message"
+                    icon={<MessageIcon />}
+                  />
+                  <BottomNavigationAction
+                    label="Help"
+                    value="help"
+                    icon={<HelpOutlineIcon />}
+                  />
+                </BottomNavigation>
+              )}
             </Paper>
           </Box>
         </Slide>

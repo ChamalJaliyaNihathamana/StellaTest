@@ -1,13 +1,14 @@
 import { Pinecone, PineconeRecord } from "@pinecone-database/pinecone";
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
-import { ClothingItem, AccessoryItem } from "./types";  
+import { ClothingItem, AccessoryItem } from "./types";
 import { parseClosetData } from "@/client/utils/parsedClosetData";
 
 const pinecone = new Pinecone({
   apiKey: process.env.NEXT_PUBLIC_PINECONE_API_KEY!,
 });
-const INDEX_NAME = process.env.NEXT_PUBLIC_PINECONE_INDEX_NAME || "clothing-items";
+const INDEX_NAME =
+  process.env.NEXT_PUBLIC_PINECONE_INDEX_NAME || "clothing-items";
 
 const openai = new OpenAI({
   apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
@@ -22,8 +23,8 @@ export async function POST(request: Request) {
     const { method, data } = await request.json();
 
     if (method === "upsert") {
-    //   const closetData: string = data;
-    //   const parsedItems = await parseClosetData(closetData);
+      //   const closetData: string = data;
+      //   const parsedItems = await parseClosetData(closetData);
 
       const batchSize = 500;
       for (let i = 0; i < data.length; i += batchSize) {
@@ -52,29 +53,58 @@ export async function POST(request: Request) {
         message: `${data.length} items upserted to Pinecone successfully`,
       });
     } else if (method === "query") {
-      const { query, topK = 5, filter } = data;
+      let { query, topK = 5, filter } = data;
 
-      // Input Validation for Query
-      if (typeof query !== "string" || query.trim() === "") {
-        return NextResponse.json(
-          { error: "Invalid or empty query" },
-          { status: 400 }
-        );
+      // Handle empty query: Use an empty vector to fetch all items
+      if (!query || query.trim() === "") {
+        query = ""; // Explicitly set to empty string for clarity
       }
 
-      const queryEmbeddingResponse = await openai.embeddings.create({
-        model: "text-embedding-ada-002",
-        input: query,
-      });
-      const queryEmbedding = queryEmbeddingResponse.data[0].embedding;
+      // Generate embedding (even for empty query) to maintain consistent format
+      const queryEmbedding = query
+        ? await openai.embeddings
+            .create({ model: "text-embedding-ada-002", input: query })
+            .then((r) => r.data[0].embedding)
+        : []; // Empty embedding for empty query
+
+      // Handle empty or missing filter:  Fetch all if no filter provided
+      filter = filter || undefined; // Explicitly set to undefined if empty/missing
 
       const queryResponse = await index.query({
-        topK,
+        topK: query ? topK : 10000, // Adjust if you expect more than 10,000 items
         includeMetadata: true,
         vector: queryEmbedding,
-        filter, // Apply filters if provided
+        filter,
       });
+
       return NextResponse.json(queryResponse);
+    } else if (method === "fetchWardrobeEmbeddings") {
+      let { query: originalQuery, topK = 3 } = data; // Get the original query
+
+      let queryToSend = originalQuery; // Create a new variable to work with
+      if (!queryToSend || queryToSend.trim() === "") {
+        queryToSend = "";
+      }
+
+      // Use queryToSend in your Pinecone query
+      const queryEmbedding = queryToSend
+        ? await openai.embeddings
+            .create({ model: "text-embedding-ada-002", input: queryToSend })
+            .then((r) => r.data[0].embedding)
+        : [];
+      const queryResponse = await index.query({
+        topK,
+        includeValues: true,
+        includeMetadata: true,
+        vector: queryEmbedding,
+      });
+
+      const wardrobeEmbeddings = queryResponse.matches.map((match) => ({
+        itemId: match.id,
+        embedding: match.values,
+      }));
+
+      return NextResponse.json(wardrobeEmbeddings); // Send the embeddings as response
     } else {
       return NextResponse.json({ error: "Invalid method" }, { status: 400 });
     }
@@ -87,6 +117,9 @@ export async function POST(request: Request) {
         { status: error.response.status }
       );
     }
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }
