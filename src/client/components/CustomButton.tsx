@@ -20,6 +20,7 @@ interface CustomButtonProps {
   icon?: React.ReactElement;
   className?: string;
   type?: "button" | "reset" | "submit";
+  iconPosition?: string;
 }
 
 const CustomButton: React.FC<CustomButtonProps> = ({
@@ -32,6 +33,7 @@ const CustomButton: React.FC<CustomButtonProps> = ({
   icon,
   className,
   type,
+  iconPosition = "end",
   ...otherProps
 }) => {
   // Determine button styles based on color prop
@@ -49,16 +51,17 @@ const CustomButton: React.FC<CustomButtonProps> = ({
   return (
     <Button
       variant={variant || "contained"}
-      color={color === "customBlack" ? "inherit" : color || "primary"} // Set to 'inherit' for custom styling
+      color={color === "customBlack" ? "inherit" : color || "primary"}
       onClick={onClick}
       size={size || "medium"}
       disabled={disabled}
+      startIcon={iconPosition === "start" ? icon : undefined} // Use StartIcon/EndIcon
+      endIcon={iconPosition === "end" ? icon : undefined} // for correct positioning
       className={className}
       type={type || "button"}
-      sx={buttonStyles} // Apply custom styles when color is 'customBlack'
+      sx={buttonStyles}
       {...otherProps}
     >
-      {icon ? <span className="button-icon">{icon}</span> : null}
       {children}
     </Button>
   );
