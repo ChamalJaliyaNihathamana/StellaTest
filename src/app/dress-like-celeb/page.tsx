@@ -22,6 +22,7 @@ import {
   Grid,
   Typography,
 } from "@mui/material";
+import { setExistingWardrobe } from "@/lib/features/user-profile/userProfileSlice";
 
 const DressLikeCeleb: React.FunctionComponent = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -39,6 +40,44 @@ const DressLikeCeleb: React.FunctionComponent = () => {
   const { messages, setInput, handleSubmit, isLoading, error } =
     useChatManager("/api/openai");
 
+  useEffect(() => {
+    const fetchExistingWardrobe = async () => {
+      try {
+        const response = await fetch("/api/pinecone", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            method: "query", // Assuming "query" is the correct method for fetching in your API
+            data: {
+              // If you want to fetch all items:
+              // query: "",
+              // Or if you want a specific query:
+              query: "Describe the user's existing wardrobe",
+            },
+          }),
+        });
+
+        const data = await response.json();
+        console.log("Pinecone response data:", data); // Log the raw response for debugging
+
+        if (data && Array.isArray(data.matches)) {
+          const wardrobeDescriptions = data.matches
+            .map((item: any) => item.metadata?.text)
+            .filter(Boolean)
+            .join(", ");
+          dispatch(setExistingWardrobe(wardrobeDescriptions));
+        } else {
+          console.warn("No matching wardrobe items found in Pinecone.", data); // Include response in warning
+        }
+      } catch (error) {
+        console.error("Error fetching wardrobe from Pinecone:", error);
+      }
+    };
+
+    fetchExistingWardrobe();
+  }, [dispatch]);
   useEffect(() => {
     const modifiedInput = dressLikeCelebPrompt(
       celebrityName,

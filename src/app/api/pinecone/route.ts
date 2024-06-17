@@ -52,28 +52,30 @@ export async function POST(request: Request) {
         message: `${data.length} items upserted to Pinecone successfully`,
       });
     } else if (method === "query") {
-      const { query, topK = 5, filter } = data;
+      let { query, topK = 5, filter } = data;
 
-      // Input Validation for Query
-      if (typeof query !== "string" || query.trim() === "") {
-        return NextResponse.json(
-          { error: "Invalid or empty query" },
-          { status: 400 }
-        );
+      // Handle empty query: Use an empty vector to fetch all items
+      if (!query || query.trim() === "") {
+        query = ""; // Explicitly set to empty string for clarity
       }
 
-      const queryEmbeddingResponse = await openai.embeddings.create({
-        model: "text-embedding-ada-002",
-        input: query,
-      });
-      const queryEmbedding = queryEmbeddingResponse.data[0].embedding;
+      // Generate embedding (even for empty query) to maintain consistent format
+      const queryEmbedding = query
+        ? await openai.embeddings
+            .create({ model: "text-embedding-ada-002", input: query })
+            .then((r) => r.data[0].embedding)
+        : []; // Empty embedding for empty query
+
+      // Handle empty or missing filter:  Fetch all if no filter provided
+      filter = filter || undefined; // Explicitly set to undefined if empty/missing
 
       const queryResponse = await index.query({
-        topK,
+        topK: query ? topK : 10000,  // Adjust if you expect more than 10,000 items
         includeMetadata: true,
         vector: queryEmbedding,
-        filter, // Apply filters if provided
+        filter,
       });
+
       return NextResponse.json(queryResponse);
     } else {
       return NextResponse.json({ error: "Invalid method" }, { status: 400 });
@@ -90,3 +92,5 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
+
+

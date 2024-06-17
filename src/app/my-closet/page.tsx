@@ -1,6 +1,6 @@
 "use client";
-import { useState } from "react";
-import { ClothingItem } from "../api/pinecone/types";
+import { useEffect, useState } from "react";
+import { AccessoryItem, ClothingItem } from "../api/pinecone/types";
 import {
   Box,
   Typography,
@@ -18,9 +18,16 @@ import CustomSearchInput from "@/client/components/CustomSearchInput";
 import CustomDropdown from "@/client/components/CustomDropdown";
 import CustomButton from "@/client/components/CustomButton";
 import Carousel from "react-material-ui-carousel";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "@/lib/store";
+import { setExistingWardrobe } from "@/lib/features/user-profile/userProfileSlice";
 
 const MyCloset: React.FC = () => {
+  const dispatch = useDispatch<AppDispatch>();
   const [results, setResults] = useState<PineconeResult | null>(null);
+  const [filteredItems, setFilteredItems] = useState<
+    (ClothingItem | AccessoryItem)[]
+  >([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [upsertMessage, setUpsertMessage] = useState<string | null>(null);
@@ -30,6 +37,57 @@ const MyCloset: React.FC = () => {
     color: "",
     style: "",
   });
+
+  const { existingWardrobe } = useSelector(
+    (state: RootState) => state.userProfile
+  );
+  useEffect(() => {
+    const fetchWardrobeData = async () => {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const response = await fetch("/api/pinecone", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            method: "query",
+            data: {
+              query: "Describe the user's existing wardrobe",
+            },
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          const errorMessage =
+            errorData?.error || "Error fetching wardrobe data";
+          throw new Error(errorMessage);
+        }
+
+        const data: PineconeResult = await response.json();
+        console.log("Fetched Pinecone data:", data);
+
+        // Extract ClothingItem or AccessoryItem objects from metadata
+        const wardrobeItems = data.matches.map(
+          (match) => match.metadata as ClothingItem | AccessoryItem
+        );
+
+        dispatch(setExistingWardrobe(wardrobeItems)); // Update Redux
+        setFilteredItems(wardrobeItems);
+        setResults(data); // Update component state for initial display
+      } catch (err: any) {
+        setError(
+          err.message || "An error occurred while fetching wardrobe data."
+        );
+        console.error("Error details:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchWardrobeData();
+  }, [dispatch]);
 
   const handleUpsert = async () => {
     setIsLoading(true);
@@ -111,30 +169,60 @@ const MyCloset: React.FC = () => {
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+    event.preventDefault(); // Prevent default form submission
     setIsLoading(true);
     setError(null);
 
     try {
-      const response = await fetch("/api/pinecone", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          method: "query",
-          data: { query, filter: filters },
-        }),
-      });
+      if (
+        query === "" &&
+        !filters.category &&
+        !filters.color &&
+        !filters.style
+      ) {
+        // No query and no active filters, fetch all items
+        setFilteredItems(existingWardrobe);
+      } else {
+        // Construct filter object for Pinecone query
+        const pineconeFilters: Record<string, string> = {};
+        if (filters.category) pineconeFilters.category = filters.category;
+        if (filters.color) pineconeFilters.color = filters.color;
+        if (filters.style) pineconeFilters.style = filters.style;
 
-      if (!response.ok) {
-        throw new Error("Error querying Pinecone");
+        // Send the query and filter object to your API endpoint
+        const response = await fetch("/api/pinecone", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            method: "query",
+            data: {
+              query: query ? query : "Describe the user's existing wardrobe",
+              filter: pineconeFilters,
+            },
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json(); // Try to get detailed error info
+          throw new Error(errorData.error || "Error querying Pinecone");
+        }
+
+        // Parse the response from Pinecone
+        const data = (await response.json()) as PineconeResult;
+
+        // Update the filtered items state with results from Pinecone
+        setFilteredItems(
+          data.matches.map(
+            (match) => match.metadata as ClothingItem | AccessoryItem
+          )
+        );
       }
-
-      const data = (await response.json()) as PineconeResult;
-      setResults(data);
-    } catch (err) {
-      setError("An error occurred while querying.");
-      console.error(err);
+    } catch (error: any) {
+      // Handle errors, update error state and log to console
+      setError(error.message || "An error occurred while querying.");
+      console.error(error);
     } finally {
+      // Set loading to false after the API call, regardless of success or failure
       setIsLoading(false);
     }
   };
@@ -260,56 +348,37 @@ const MyCloset: React.FC = () => {
           <Typography variant="body1" color="error" mt={2}>
             {error}
           </Typography>
-        ) : results && results.matches.length > 0 ? (
-          <Box
-            sx={{ display: "flex", justifyContent: "center", width: "100%" }}
-          >
-            <Carousel
-              autoPlay={true}
-              // navButtonsAlwaysVisible
-              animation="slide"
-              fullHeightHover={false}
-              sx={{
-                width: "40%",
-
-                "& .MuiCard-root": {
-                  backgroundColor: "#f5f5f5",
-                  borderRadius: "12px",
-                  padding: "1.5rem",
-                  boxShadow: "0px 2px 5px rgba(0, 0, 0, 0.1)",
-                },
-                "& .MuiIconButton-root": {
-                  color: "#333",
-                  fontSize: "2rem",
-                  "&:hover": {
-                    backgroundColor: "rgba(0, 0, 0, 0.05)",
-                  },
-                },
-                "& .MuiCarousel-indicators": {
-                  position: "absolute",
-                  bottom: 10,
-                  left: "50%",
-                  transform: "translateX(-50%)",
-                },
-                "& .MuiCarousel-indicator": {
-                  width: 8,
-                  height: 8,
-                  borderRadius: "50%",
-                },
-              }}
-            >
-              {results.matches.map((match, index) => (
+        ) : filteredItems.length > 0 ? (
+          <Grid container spacing={2} mt={2}>
+            {filteredItems.map((item, index) => (
+              <Grid item xs={12} md={4} key={index}>
                 <Card
                   className="transform hover:scale-105 transition-transform duration-300 shadow-md"
-                  key={index}
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    height: "100%",
+                    padding: 2,
+                    boxShadow: 3,
+                    borderRadius: 2,
+                    margin: 1,
+                    "&:hover": {
+                      boxShadow: 5,
+                    },
+                  }}
                 >
-                  {/* <CardMedia
-                                     component="img"
-                                     alt={match.metadata.itemId}
-                                     image={"imageUrl" in match.metadata ? match.metadata.imageUrl : "/placeholder.jpg"}
-                                     height="250" // Optional fixed height for image consistency
-                                   /> */}
-                  <CardContent>
+                  {/* CardMedia (Optional) */}
+                  {/* {item.imageUrl && ( // Conditionally render if imageUrl exists
+                    <CardMedia
+                      component="img"
+                      alt={item.itemId}
+                      height="250" // Or any desired fixed height
+                      image={item.imageUrl}
+                      sx={{ objectFit: "cover" }} // Maintain aspect ratio and cover the container
+                    />
+                  )} */}
+
+                  <CardContent sx={{ flexGrow: 1 }}>
                     <Stack
                       direction="row"
                       justifyContent="space-between"
@@ -320,33 +389,25 @@ const MyCloset: React.FC = () => {
                       <Typography
                         variant="h6"
                         component="div"
-                        sx={{
-                          "&::first-letter": { textTransform: "capitalize" },
-                        }}
+                        sx={{ textTransform: "capitalize" }}
                       >
-                        {match.metadata.subcategory}
+                        {item.subcategory}
                       </Typography>
-
-                      {match.metadata.brand && (
+                      {item.brand && (
                         <Badge
-                          badgeContent={match.metadata.brand}
+                          badgeContent={item.brand}
                           color="warning"
-                          sx={{
-                            // Apply styles to the badge itself
-                            "& .MuiBadge-badge": {
-                              // Target the badge content specifically
-                              textTransform: "capitalize",
-                            },
-                          }}
+                          sx={{ textTransform: "capitalize" }}
                         />
                       )}
                     </Stack>
+
                     <Typography variant="body2" color="text.secondary">
-                      {match.metadata.additionalNotes}
+                      {item.additionalNotes}
                     </Typography>
-                    {/* Display Tags */}
+
                     <Box mt={1}>
-                      {match.metadata.style.map((style) => (
+                      {(item.style || []).map((style) => (
                         <Chip
                           key={style}
                           label={style}
@@ -354,7 +415,7 @@ const MyCloset: React.FC = () => {
                           className="mr-1"
                         />
                       ))}
-                      {match.metadata.color.map((color) => (
+                      {(item.color || []).map((color) => (
                         <Chip
                           key={color}
                           label={color}
@@ -365,9 +426,9 @@ const MyCloset: React.FC = () => {
                     </Box>
                   </CardContent>
                 </Card>
-              ))}
-            </Carousel>
-          </Box>
+              </Grid>
+            ))}
+          </Grid>
         ) : (
           <Typography variant="body1" mt={2}>
             No results found.
