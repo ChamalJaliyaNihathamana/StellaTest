@@ -21,9 +21,13 @@ import Carousel from "react-material-ui-carousel";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/lib/store";
 import { setExistingWardrobe } from "@/lib/features/user-profile/userProfileSlice";
+import { entityExtractionWardrobePrompt } from "@/client/prompts/entityExtractionWardrobePrompt";
 
 const MyCloset: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
+  const [rawWardrobeData, setRawWardrobeData] = useState(
+    "Cream-colored silk blouse: This elegant blouse features a high collar with a tie closure and long, voluminous sleeves. The fabric appears to be lightweight and drapes beautifully. White silk blouse: This classic blouse has a Mandarin collar and a button-front closure. The silk fabric has a subtle sheen, giving it a luxurious look. Pink silk skirt: This delicate skirt appears to be made of a lightweight silk fabric with a subtle sheen. It has a relaxed fit and falls to about knee length. Light pink ruffled blouse: This romantic blouse is crafted from a sheer, lightweight fabric and features delicate ruffles along the neckline and sleeves. The soft pink color adds a feminine touch."
+  );
   const [results, setResults] = useState<PineconeResult | null>(null);
   const [filteredItems, setFilteredItems] = useState<
     (ClothingItem | AccessoryItem)[]
@@ -91,82 +95,78 @@ const MyCloset: React.FC = () => {
 
   const handleUpsert = async () => {
     setIsLoading(true);
-    setError(null); // Clear previous errors
-    setUpsertMessage(null); // Clear the previous upsert message
-
-    const clothingItems: ClothingItem[] = [
-      {
-        itemId: "blouse_cream_silk",
-        category: "clothing",
-        subcategory: "blouse",
-        color: ["cream"],
-        pattern: "",
-        fabricMaterial: "silk",
-        fabricTexture: ["lightweight"],
-        fabricTransparency: "opaque",
-        brand: "",
-        style: ["elegant"],
-        neckline: "high collar",
-        closure: ["tie"],
-        sleeveLength: "long",
-        fit: ["relaxed"],
-        embellishments: [],
-        detailOther: ["voluminous sleeves"],
-        occasion: ["formal", "casual"],
-        season: ["spring", "summer"],
-        size: "unknown",
-        complementaryItems: [],
-        personalRating: 0,
-        additionalNotes:
-          "This elegant blouse features a high collar with a tie closure and long, voluminous sleeves. The fabric appears to be lightweight and drapes beautifully.",
-      },
-      {
-        itemId: "blouse_white_silk",
-        category: "clothing",
-        subcategory: "blouse",
-        color: ["white"],
-        pattern: "",
-        fabricMaterial: "silk",
-        fabricTexture: ["smooth"],
-        fabricTransparency: "opaque",
-        brand: "",
-        style: ["classic"],
-        neckline: "Mandarin collar",
-        closure: ["button-front"],
-        sleeveLength: "long",
-        fit: ["relaxed"],
-        embellishments: [],
-        detailOther: ["subtle sheen"],
-        occasion: ["formal", "casual"],
-        season: ["spring", "summer"],
-        size: "unknown",
-        complementaryItems: [],
-        personalRating: 0,
-        additionalNotes:
-          "This classic blouse has a Mandarin collar and a button-front closure. The silk fabric has a subtle sheen, giving it a luxurious look.",
-      },
-    ];
+    setError(null);
+    setUpsertMessage(null);
 
     try {
+      // 1. Extract Item Data from Raw Input
+      const extractedItems = await entityExtractionWardrobePrompt(
+        rawWardrobeData
+      );
+
+      // 2. Check if Extraction Was Successful
+      if (extractedItems.length === 0) {
+        throw new Error("No wardrobe items could be extracted from the input.");
+      }
+
+      // 3. Upsert to Pinecone
       const response = await fetch("/api/pinecone", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ method: "upsert", data: clothingItems }), // Send the array of items
+        body: JSON.stringify({ method: "upsert", data: extractedItems }),
       });
 
-      if (!response.ok) {
+      // 4. Handle the Response
+      if (response.ok) {
+        const data = await response.json();
+        setUpsertMessage(data.message || "Items upserted successfully!");
+
+        // 5. Optional: Update Local State
+        // If you want to immediately display the added items in your UI, you could do:
+        // setWardrobeItems(prevItems => [...prevItems, ...extractedItems]);
+      } else {
         throw new Error(`Error upserting to Pinecone: ${response.statusText}`);
       }
-
-      const data = await response.json();
-      setUpsertMessage(data.message);
     } catch (err) {
-      setError("An error occurred while adding the items.");
-      console.error(err);
+      // 6. Error Handling
+      if (err instanceof Error) {
+        setError(err.message); // Display specific error message to the user
+      } else {
+        setError("An unexpected error occurred.");
+      }
+      console.error(err); // Log the error for debugging
     } finally {
       setIsLoading(false);
     }
   };
+
+  // const handleUpsert = async () => {
+  //   setIsLoading(true);
+  //   setError(null); // Clear previous errors
+  //   setUpsertMessage(null); // Clear the previous upsert message
+
+  //   let items =
+
+  //   try {
+  //     const response = await fetch("/api/pinecone", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({ method: "upsert", data: items }), // Send the array of items
+  //     });
+
+  //     if (!response.ok) {
+  //       throw new Error(`Error upserting to Pinecone: ${response.statusText}`);
+  //     }
+
+  //     const data = await response.json();
+  //     setUpsertMessage(data.message);
+  //   } catch (err) {
+  //     setError("An error occurred while adding the items.");
+  //     console.error(err);
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault(); // Prevent default form submission
@@ -264,6 +264,13 @@ const MyCloset: React.FC = () => {
         <Typography variant="h5" component="h1" gutterBottom>
           Explore My Wardrobe
         </Typography>
+        <CustomButton
+          onClick={handleUpsert}
+          color="customBlack"
+          disabled={isLoading}
+        >
+          {isLoading ? "Adding..." : "Add Sample Blouse"}
+        </CustomButton>
 
         {/* Upsert Section */}
         {/* <Box mb={4}>
