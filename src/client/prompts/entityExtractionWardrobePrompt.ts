@@ -140,57 +140,53 @@ export const entityExtractionWardrobePrompt = async (
     let parsedItems: (ClothingItem | AccessoryItem)[] = [];
 
     try {
-      const rawResponse = parsingResponse.choices[0]?.message?.content?.trim().replace(/\\n/g, "\n").replace(/#/g, "");
-
+      const rawResponse = parsingResponse.choices[0]?.message?.content;
       if (!rawResponse || typeof rawResponse !== "string") {
         throw new Error("Invalid response from OpenAI API.");
       }
 
-      const parsedData = JSON.parse(rawResponse);
-
-      if (!Array.isArray(parsedData)) {
-        throw new Error("OpenAI response is not a valid JSON array.");
+      // Remove everything except the JSON array content
+      const jsonMatch = rawResponse.match(/\[.*\]/s); // Match from first '[' to last ']' (single-line mode)
+      if (!jsonMatch) {
+        throw new Error("No valid JSON array found in the response.");
       }
+      const jsonString = jsonMatch[0];
 
-      console.log(parsedItems)
-      // Apply default values for missing or empty attributes
-      parsedItems = parsedData.map((item: any) => {
-        return {
-          ...item,
-          itemId: uuidv4(), // Assign a unique ID to each item
-          category: item.category === "clothing" ? "clothing" : "accessory",
-          color: item.color || ["Unknown"],
-          brand: item.brand || "Unknown",
-          style: item.style || ["Unknown"],
-          additionalNotes: item.additionalNotes || "Unknown", // Handle potentially empty additionalNotes
-          subcategory: item.subcategory || "Unknown",
-          pattern: item.pattern || "Unknown",
-          fabricMaterial: item.fabricMaterial || "Unknown",
-          fabricTexture: item.fabricTexture || ["Unknown"],
-          fabricTransparency: item.fabricTransparency || "Unknown",
-          neckline: item.neckline === "" ? "Unknown" : item.neckline, // Handle empty string
-          closure: item.closure || ["Unknown"],
-          sleeveLength:
-            item.sleeveLength === "" ? "Unknown" : item.sleeveLength, // Handle empty string
-          fit: item.fit || ["Unknown"],
-          embellishments: item.embellishments || ["Unknown"],
-          detailOther: item.detailOther || ["Unknown"],
-          occasion: item.occasion || ["Unknown"],
-          season: item.season || ["Unknown"],
-          size: item.size === "" ? "Unknown" : item.size, // Handle empty string
-          complementaryItems: item.complementaryItems || ["Unknown"],
-          personalRating: item.personalRating || null,
-          material: item.material || "Unknown", // For AccessoryItem
-          length: item.length || "Unknown", // For AccessoryItem
-          gemstones: item.gemstones || ["Unknown"], // For AccessoryItem
-        };
-      });
+      parsedItems = JSON.parse(jsonString);
     } catch (parseError) {
       console.error("Error parsing LLM response:", parseError, parsingResponse);
-      throw new Error(
-        "OpenAI response could not be parsed or validated. Please check the response format and ensure it matches the ClothingItem or AccessoryItem schemas."
-      );
+      throw new Error("OpenAI response could not be parsed as valid JSON.");
     }
+
+    // Apply default values for missing or empty attributes and handle type issues
+    parsedItems = parsedItems.map((item: any) => ({
+      ...item,
+      itemId: uuidv4(), // Assign a unique ID to each item
+      category: item.category === "clothing" ? "clothing" : "accessory",
+      color: item.color || ["Unknown"],
+      brand: item.brand || "Unknown",
+      style: item.style || ["Unknown"],
+      additionalNotes: item.additionalNotes || "Unknown", // Handle potentially empty additionalNotes
+      subcategory: item.subcategory || "Unknown",
+      pattern: item.pattern || "Unknown",
+      fabricMaterial: item.fabricMaterial || "Unknown",
+      fabricTexture: item.fabricTexture || ["Unknown"],
+      fabricTransparency: item.fabricTransparency || "Unknown",
+      neckline: item.neckline === "" ? "Unknown" : item.neckline, // Handle empty string
+      closure: item.closure || ["Unknown"],
+      sleeveLength: item.sleeveLength === "" ? "Unknown" : item.sleeveLength, // Handle empty string
+      fit: item.fit || ["Unknown"],
+      embellishments: item.embellishments || ["Unknown"],
+      detailOther: item.detailOther || ["Unknown"],
+      occasion: item.occasion || ["Unknown"],
+      season: item.season || ["Unknown"],
+      size: item.size === "" ? "Unknown" : item.size, // Handle empty string
+      complementaryItems: item.complementaryItems || ["Unknown"],
+      personalRating: item.personalRating || null,
+      material: item.material || "Unknown", // For AccessoryItem
+      length: item.length || "Unknown", // For AccessoryItem
+      gemstones: item.gemstones || ["Unknown"], // For AccessoryItem
+    }));
 
     return parsedItems;
   } catch (error) {
