@@ -18,7 +18,7 @@ const ChatHome: React.FunctionComponent<ChatHomeProps> = ({ isChatOpen }) => {
         >
           <Typography variant="h6" className="text-left text-white"> {/* White text */}
             <span>Hi There 👋</span> <br />
-            <span className="font-bold">I&apos;m Stella Your Smart Fashion Assist !</span>
+            {/* <span className="font-bold">I&apos;m Stella Your Smart Fashion Assist !</span> */}
           </Typography>
 
         </Box>
