@@ -1,3 +1,4 @@
+"use client"
 import CustomButton from "@/client/components/CustomButton";
 import CustomTextArea from "@/client/components/CustomTextArea";
 import { entityExtractionWardrobePrompt } from "@/client/prompts/entityExtractionWardrobePrompt";
@@ -48,7 +49,7 @@ const VideoOnboard: React.FunctionComponent<VideoOnboardProps> = () => {
         // Call to your Pinecone API Route
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ method: "upsert", data: allParsedItems }),
+        body: JSON.stringify({ method: "upsert", data: wardrobeData }), 
       });
 
       if (pineconeResponse.ok) {

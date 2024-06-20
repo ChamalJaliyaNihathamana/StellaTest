@@ -182,7 +182,7 @@ export const entityExtractionWardrobePrompt = async (
       season: item.season || ["Unknown"],
       size: item.size === "" ? "Unknown" : item.size, // Handle empty string
       complementaryItems: item.complementaryItems || ["Unknown"],
-      personalRating: item.personalRating || null,
+      personalRating: item.personalRating || 0,
       material: item.material || "Unknown", // For AccessoryItem
       length: item.length || "Unknown", // For AccessoryItem
       gemstones: item.gemstones || ["Unknown"], // For AccessoryItem

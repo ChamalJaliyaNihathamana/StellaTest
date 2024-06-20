@@ -56,33 +56,22 @@ export async function POST(request: Request) {
         );
         console.log('Upserting vectors:', vectors);
         try {
-          // Upsert to Pinecone
-          await index.upsert(vectors); 
-        } catch (upsertError: any) { // Catch upsert-specific errors
-          if (upsertError.response && upsertError.response.status >= 500) { // Check for 5xx errors (server-side)
-            console.error("Pinecone internal server error:", upsertError);
-            return NextResponse.json(
-              { error: "An error occurred on the Pinecone server. Please try again later." },
-              { status: 500 } 
-            );
-          } else {
-            console.error("Pinecone upsert error:", upsertError);
-            return NextResponse.json(
-              { error: upsertError.message || "Pinecone upsert failed." },
-              { status: upsertError.response?.status || 500 } // Fallback to 500 if no specific status available
-            );
-          }
-        } 
+          await index.upsert(vectors);
+        } catch (upsertError: any) { 
+          console.error("Pinecone upsert error:", upsertError);
+          return NextResponse.json({ 
+            error: upsertError.message || "An error occurred while upserting to Pinecone." 
+          }, { status: 500 }); // Internal Server Error for Pinecone issues
+        }
       }
+
       return NextResponse.json(
-        {
-          message: `${parsedItems.length} items upserted to Pinecone successfully.`,
-        },
-        { status: 200 }
+        { message: `${parsedItems.length} items upserted to Pinecone successfully.` },
+        { status: 200, headers: { 'Access-Control-Allow-Origin': 'http://localhost:3000' } }  // Adjust the origin
       );
     } else if (method === "query") {
-      let { query, topK = 5, filter } = data;
-
+      let { query,  filter } = data;
+      let topK = query?.length || 5; 
       // Handle empty query: Use an empty vector to fetch all items
       if (!query || query.trim() === "") {
         query = ""; // Explicitly set to empty string for clarity
