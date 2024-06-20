@@ -2,13 +2,14 @@ import { Pinecone, PineconeRecord } from "@pinecone-database/pinecone";
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { ClothingItem, AccessoryItem } from "./types";
-import { parseClosetData } from "@/client/utils/parsedClosetData";
+import { entityExtractionWardrobePrompt } from "@/client/prompts/entityExtractionWardrobePrompt";
+import { chunkWardrobeData } from "@/client/utils/chunkHelper";
 
 const pinecone = new Pinecone({
   apiKey: process.env.NEXT_PUBLIC_PINECONE_API_KEY!,
 });
 const INDEX_NAME =
-  process.env.NEXT_PUBLIC_PINECONE_INDEX_NAME || "clothing-items";
+  process.env.NEXT_PUBLIC_PINECONE_INDEX_NAME;
 
 const openai = new OpenAI({
   apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
@@ -16,21 +17,28 @@ const openai = new OpenAI({
 });
 
 type PineconeRecordWithMetadata<T> = PineconeRecord<{ [key: string]: any } & T>;
+const MAX_CHUNK_SIZE = 2000;
 
 export async function POST(request: Request) {
   try {
     const index = pinecone.Index(INDEX_NAME);
     const { method, data } = await request.json();
+    let parsedItems: (ClothingItem | AccessoryItem)[] = [];
 
     if (method === "upsert") {
-      //   const closetData: string = data;
-      //   const parsedItems = await parseClosetData(closetData);
+      const chunks = chunkWardrobeData(data, MAX_CHUNK_SIZE);
 
-      const batchSize = 500;
-      for (let i = 0; i < data.length; i += batchSize) {
-        const batch = data.slice(i, i + batchSize);
+      for (const chunk of chunks) {
+        const items = await entityExtractionWardrobePrompt(chunk);
+        parsedItems.push(...items);
+      }
+
+      // Generate embeddings and upsert to Pinecone
+      const batchSize = 500; // Choose an appropriate batch size
+      for (let i = 0; i < parsedItems.length; i += batchSize) {
+        const batch = parsedItems.slice(i, i + batchSize);
         const vectors = await Promise.all(
-          batch.map(async (item) => {
+          batch.map(async (item: ClothingItem | AccessoryItem) => {
             const embeddingResponse = await openai.embeddings.create({
               model: "text-embedding-ada-002",
               input: item.additionalNotes,
@@ -46,12 +54,32 @@ export async function POST(request: Request) {
             return record;
           })
         );
-        await index.upsert(vectors);
+        console.log('Upserting vectors:', vectors);
+        try {
+          // Upsert to Pinecone
+          await index.upsert(vectors); 
+        } catch (upsertError: any) { // Catch upsert-specific errors
+          if (upsertError.response && upsertError.response.status >= 500) { // Check for 5xx errors (server-side)
+            console.error("Pinecone internal server error:", upsertError);
+            return NextResponse.json(
+              { error: "An error occurred on the Pinecone server. Please try again later." },
+              { status: 500 } 
+            );
+          } else {
+            console.error("Pinecone upsert error:", upsertError);
+            return NextResponse.json(
+              { error: upsertError.message || "Pinecone upsert failed." },
+              { status: upsertError.response?.status || 500 } // Fallback to 500 if no specific status available
+            );
+          }
+        } 
       }
-
-      return NextResponse.json({
-        message: `${data.length} items upserted to Pinecone successfully`,
-      });
+      return NextResponse.json(
+        {
+          message: `${parsedItems.length} items upserted to Pinecone successfully.`,
+        },
+        { status: 200 }
+      );
     } else if (method === "query") {
       let { query, topK = 5, filter } = data;
 

@@ -1,33 +1,21 @@
 "use client";
 import CustomButton from "@/client/components/CustomButton";
-import {
-  Box,
-  Typography,
-  Paper,
-  Slide,
-  IconButton,
-  Stack,
-  Chip,
-  Divider,
-  Avatar,
-} from "@mui/material";
+import { Box, Typography, Paper, Stack, Divider, Avatar } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
-
-
 interface ChatHistoryProps {
   isChatOpen: boolean;
-  onSendMessage: () => void
+  onSendMessage: () => void;
 }
 
 const ChatHistory: React.FunctionComponent<ChatHistoryProps> = ({
   isChatOpen,
-  onSendMessage
+  onSendMessage,
 }) => {
-    const router = useRouter(); // Get the router object
-    
+  const router = useRouter(); // Get the router object
+
   return (
     <Box display="flex" flexDirection="column" height="100%">
       {/* Top Box - Chat History Title */}
