@@ -249,17 +249,16 @@ const MyCloset: React.FC = () => {
         ) : filteredItems.length > 0 ? (
           <Grid container spacing={2} mt={2}>
             {filteredItems.map((item, index) => (
-              <Grid item xs={12} md={4} key={index}>
+              <Grid mb={4} item xs={12} md={4} key={index}>
                 <Card
                   className="transform hover:scale-105 transition-transform duration-300 shadow-md"
                   sx={{
                     display: "flex",
                     flexDirection: "column",
                     height: "100%",
-                    padding: 2,
-                    boxShadow: 3,
-                    borderRadius: 2,
-                    margin: 1,
+                    borderRadius: 2, // Consistent rounded corners
+                    overflow: "hidden", // Prevents image overflow
+                    transition: "box-shadow 0.3s ease", // Smooth transition for hover effect
                     "&:hover": {
                       boxShadow: 5,
                     },
@@ -276,30 +275,51 @@ const MyCloset: React.FC = () => {
                     />
                   )} */}
 
-                  <CardContent sx={{ flexGrow: 1 }}>
+                  <CardContent sx={{ flexGrow: 1, p: 2 }}>
                     <Stack
                       direction="row"
                       justifyContent="space-between"
                       alignItems="center"
                       spacing={1}
                       mb={2}
+                      sx={{
+                        px: 2,
+                        py: 1,
+                        borderBottom: '1px solid lightgray',
+                        pr: 4,  // Add extra padding to the right
+                      }}
                     >
                       <Typography
                         variant="h6"
                         component="div"
-                        sx={{ textTransform: "capitalize" }}
+                        sx={{
+                          // Custom styles for the Typography component
+                          textTransform: "capitalize",
+                          fontWeight: "bold", // Optional: Make the subcategory text bold
+                          fontSize: 16, // Optional: Adjust font size
+                        }}
                       >
                         {item.subcategory}
                       </Typography>
+
                       {item.brand && (
                         <Badge
                           badgeContent={item.brand}
-                          color="warning"
-                          sx={{ textTransform: "capitalize" }}
+                          color="primary" // Consider changing to a different color for better contrast
+                          sx={{
+                            // Custom styles for the Badge component
+                            textTransform: "capitalize",
+                            fontSize: 12,
+                            fontWeight: "bold",
+                            padding: "4px 8px",
+                            borderRadius: 4,
+                            // Customize the background color:
+                            backgroundColor: "lightgray", // Example: A light gray background
+                            color: "black", // Example: Black text for better contrast
+                          }}
                         />
                       )}
                     </Stack>
-
                     <Typography variant="body2" color="text.secondary">
                       {item.additionalNotes}
                     </Typography>

@@ -8,8 +8,7 @@ import { chunkWardrobeData } from "@/client/utils/chunkHelper";
 const pinecone = new Pinecone({
   apiKey: process.env.NEXT_PUBLIC_PINECONE_API_KEY!,
 });
-const INDEX_NAME =
-  process.env.NEXT_PUBLIC_PINECONE_INDEX_NAME;
+const INDEX_NAME = process.env.NEXT_PUBLIC_PINECONE_INDEX_NAME;
 
 const openai = new OpenAI({
   apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
@@ -54,35 +53,34 @@ export async function POST(request: Request) {
             return record;
           })
         );
-        console.log('Upserting vectors:', vectors);
+        console.log("Upserting vectors:", vectors);
         try {
-          // Upsert to Pinecone
-          await index.upsert(vectors); 
-        } catch (upsertError: any) { // Catch upsert-specific errors
-          if (upsertError.response && upsertError.response.status >= 500) { // Check for 5xx errors (server-side)
-            console.error("Pinecone internal server error:", upsertError);
-            return NextResponse.json(
-              { error: "An error occurred on the Pinecone server. Please try again later." },
-              { status: 500 } 
-            );
-          } else {
-            console.error("Pinecone upsert error:", upsertError);
-            return NextResponse.json(
-              { error: upsertError.message || "Pinecone upsert failed." },
-              { status: upsertError.response?.status || 500 } // Fallback to 500 if no specific status available
-            );
-          }
-        } 
+          await index.upsert(vectors);
+        } catch (upsertError: any) {
+          console.error("Pinecone upsert error:", upsertError);
+          return NextResponse.json(
+            {
+              error:
+                upsertError.message ||
+                "An error occurred while upserting to Pinecone.",
+            },
+            { status: 500 }
+          ); // Internal Server Error for Pinecone issues
+        }
       }
+
       return NextResponse.json(
         {
           message: `${parsedItems.length} items upserted to Pinecone successfully.`,
         },
-        { status: 200 }
+        {
+          status: 200,
+          headers: { "Access-Control-Allow-Origin": "http://localhost:3000" },
+        } // Adjust the origin
       );
     } else if (method === "query") {
-      let { query, topK = 5, filter } = data;
-
+      let { query, filter } = data;
+      let topK = query?.length || 5;
       // Handle empty query: Use an empty vector to fetch all items
       if (!query || query.trim() === "") {
         query = ""; // Explicitly set to empty string for clarity
@@ -106,6 +104,38 @@ export async function POST(request: Request) {
       });
 
       return NextResponse.json(queryResponse);
+    } else if (method === "delete") {
+      // Check if 'data' is 'all' (to delete all) or an array of IDs
+      if (data === "all") {
+        // Delete all vectors in the default namespace
+        await index.deleteAll();
+        return NextResponse.json(
+          {
+            message:
+              "All vectors in the default namespace deleted successfully",
+          },
+          { status: 200 }
+        );
+      } else if (
+        Array.isArray(data) &&
+        data.every((item) => typeof item === "string")
+      ) {
+        // Delete specific vectors by ID (no change here)
+        const idsToDelete: string[] = data;
+        await index.deleteAll();
+        return NextResponse.json(
+          { message: "Vectors deleted successfully" },
+          { status: 200 }
+        );
+      } else {
+        return NextResponse.json(
+          {
+            error:
+              "Invalid data format for deletion. Please provide 'all' to delete all vectors or an array of item IDs.",
+          },
+          { status: 400 }
+        );
+      }
     } else if (method === "fetchWardrobeEmbeddings") {
       let { query: originalQuery, topK = 3 } = data; // Get the original query
 

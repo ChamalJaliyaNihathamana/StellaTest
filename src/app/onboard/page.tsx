@@ -1,8 +1,10 @@
+"use client";
 import CustomButton from "@/client/components/CustomButton";
 import CustomTextArea from "@/client/components/CustomTextArea";
 import { entityExtractionWardrobePrompt } from "@/client/prompts/entityExtractionWardrobePrompt";
 import {
   Box,
+  ButtonGroup,
   CircularProgress,
   Container,
   Grid,
@@ -11,6 +13,8 @@ import {
 import { FormEvent, useState } from "react";
 import { AccessoryItem, ClothingItem } from "../api/pinecone/types";
 import { chunkWardrobeData } from "@/client/utils/chunkHelper";
+import AddCircleIcon from "@mui/icons-material/AddCircle";
+import Delete from "@mui/icons-material/Delete";
 
 interface VideoOnboardProps {}
 
@@ -21,6 +25,7 @@ const VideoOnboard: React.FunctionComponent<VideoOnboardProps> = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [upsertMessage, setUpsertMessage] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [extractedItems, setExtractedItems] = useState<
     (ClothingItem | AccessoryItem)[]
   >([]);
@@ -48,7 +53,7 @@ const VideoOnboard: React.FunctionComponent<VideoOnboardProps> = () => {
         // Call to your Pinecone API Route
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ method: "upsert", data: allParsedItems }),
+        body: JSON.stringify({ method: "upsert", data: wardrobeData }),
       });
 
       if (pineconeResponse.ok) {
@@ -70,6 +75,38 @@ const VideoOnboard: React.FunctionComponent<VideoOnboardProps> = () => {
       setIsLoading(false);
     }
   };
+
+  const handleDeleteAll = async () => {
+    setIsDeleting(true);
+    setError(null); // Clear previous errors
+    setUpsertMessage(null); // Clear the previous upsert message
+
+    try {
+      const response = await fetch("/api/pinecone", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ method: "delete", data: "all" }), // Send 'all' to delete all vectors
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUpsertMessage(data.message || "All items deleted successfully!");
+        setExtractedItems([]); // Clear extractedItems after deletion
+      } else {
+        throw new Error(`Error deleting from Pinecone: ${response.statusText}`);
+      }
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An unexpected error occurred.");
+      }
+      console.error(err);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <Container maxWidth="md">
       <Box className="container mx-auto p-4" p={4}>
@@ -91,13 +128,31 @@ const VideoOnboard: React.FunctionComponent<VideoOnboardProps> = () => {
               </Grid>
 
               <Grid item xs={12}>
-                <CustomButton
-                  type="submit"
-                  color="customBlack"
-                  disabled={isLoading}
+                <ButtonGroup
+                  variant="outlined"
+                  aria-label="wardrobe actions"
+                  sx={{ gap: 2 }} // Add gap between buttons
                 >
-                  {isLoading ? "Adding..." : "Add to Pinecone"}
-                </CustomButton>
+                  <CustomButton
+                    type="submit"
+                    color="customBlack"
+                    disabled={isLoading}
+                    icon={<AddCircleIcon />}
+                    iconPosition="start"
+                  >
+                    {isLoading ? "Adding..." : "Add to Pinecone"}
+                  </CustomButton>
+                  <CustomButton
+                    type="button"
+                    color="customBlack"
+                    disabled={isLoading || isDeleting}
+                    onClick={handleDeleteAll}
+                    icon={<Delete />}
+                    iconPosition="start"
+                  >
+                    {isDeleting ? "Deleting..." : "Flush Pinecone Index"}
+                  </CustomButton>
+                </ButtonGroup>
               </Grid>
             </Grid>
           </form>

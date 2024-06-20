@@ -1,7 +1,12 @@
 export const chunkWardrobeData = (
-  data: string,
+  data: string | undefined,
   chunkSize: number
 ): string[] => {
+  // Check if data is a string
+  if (typeof data !== "string") {
+    throw new Error("Input to chunkWardrobeData must be a string");
+  }
+
   const chunks: string[] = [];
   let currentChunk = "";
   const sentences = data.split(/(?<=[.!?])\s+/); // Split by sentence boundaries
