@@ -15,12 +15,18 @@ import { AccessoryItem, ClothingItem } from "../api/pinecone/types";
 import { chunkWardrobeData } from "@/client/utils/chunkHelper";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import Delete from "@mui/icons-material/Delete";
+import { useSelector } from "react-redux";
+import { RootState } from "@/lib/store";
 
 interface VideoOnboardProps {}
 
 const MAX_CHUNK_SIZE = 2000;
 
 const VideoOnboard: React.FunctionComponent<VideoOnboardProps> = () => {
+  const sessionId = useSelector(
+    (state: RootState) => state.userProfile.sessionId
+  );
+
   const [wardrobeData, setWardrobeData] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -53,7 +59,11 @@ const VideoOnboard: React.FunctionComponent<VideoOnboardProps> = () => {
         // Call to your Pinecone API Route
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ method: "upsert", data: wardrobeData }),
+        body: JSON.stringify({
+          method: "upsert",
+          data: wardrobeData,
+          sessionId: sessionId,
+        }),
       });
 
       if (pineconeResponse.ok) {
@@ -85,7 +95,12 @@ const VideoOnboard: React.FunctionComponent<VideoOnboardProps> = () => {
       const response = await fetch("/api/pinecone", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ method: "delete", data: "all" }), // Send 'all' to delete all vectors
+        body: JSON.stringify({
+          method: "delete",
+          data: "all",
+          sessionId: sessionId,
+        }), // Send 'all' to delete all vectors
+        // sessionId: sessionId,
       });
 
       if (response.ok) {

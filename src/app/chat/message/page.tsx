@@ -41,6 +41,9 @@ const ChatMessagePage: React.FC<ChatMessageProps> = ({
 
   // Get state from chat slice
   const { input } = useSelector((state: RootState) => state.chat);
+  const sessionId = useSelector(
+    (state: RootState) => state.userProfile.sessionId
+  );
 
   const { messages, append, isLoading, error, setInput } = useChat({
     api: "/api/openai",
@@ -113,6 +116,7 @@ const ChatMessagePage: React.FC<ChatMessageProps> = ({
         body: JSON.stringify({
           method: "fetchWardrobeEmbeddings",
           data: { query: input },
+          sessionId: sessionId,
         }),
       });
 

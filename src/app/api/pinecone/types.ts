@@ -36,3 +36,8 @@ export interface AccessoryItem extends ItemData {
   gemstones: string[]; 
   subcategory: string;
 }
+
+export interface FilterOption {
+  value: string;
+  label: string;
+}

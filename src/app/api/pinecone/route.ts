@@ -1,9 +1,14 @@
-import { Pinecone, PineconeRecord } from "@pinecone-database/pinecone";
+import {
+  Pinecone,
+  PineconeRecord,
+  QueryOptions,
+} from "@pinecone-database/pinecone";
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
-import { ClothingItem, AccessoryItem } from "./types";
+import { ClothingItem, AccessoryItem, FilterOption } from "./types";
 import { entityExtractionWardrobePrompt } from "@/client/prompts/entityExtractionWardrobePrompt";
 import { chunkWardrobeData } from "@/client/utils/chunkHelper";
+import { toStartCase } from "@/client/utils/textHelpers";
 
 const pinecone = new Pinecone({
   apiKey: process.env.NEXT_PUBLIC_PINECONE_API_KEY!,
@@ -20,8 +25,15 @@ const MAX_CHUNK_SIZE = 2000;
 
 export async function POST(request: Request) {
   try {
-    const index = pinecone.Index(INDEX_NAME);
-    const { method, data } = await request.json();
+    const { method, data, sessionId } = await request.json();
+
+    if (!sessionId) {
+      return NextResponse.json({ error: "Missing sessionId" }, { status: 400 });
+    }
+
+    const namespace = `user_session_${sessionId}`;
+    const index = pinecone.Index(INDEX_NAME).namespace(namespace);
+    const indexF = pinecone.Index(INDEX_NAME);
     let parsedItems: (ClothingItem | AccessoryItem)[] = [];
 
     if (method === "upsert") {
@@ -78,6 +90,41 @@ export async function POST(request: Request) {
           headers: { "Access-Control-Allow-Origin": "http://localhost:3000" },
         } // Adjust the origin
       );
+    } else if (method === "fetchFilterOptions") {
+      const dummyVector = new Array(1536).fill(0);
+
+      const aggregationResponse = await index.query({
+        topK: 10000,
+        includeMetadata: true,
+        vector: dummyVector,
+      });
+
+      const allItems = aggregationResponse.matches.map(
+        (match) => match.metadata as ClothingItem | AccessoryItem
+      );
+
+      const categoryOptions: FilterOption[] = Array.from(
+        new Set(allItems.map((item) => item.category))
+      ).map((category) => ({ value: category, label: toStartCase(category) }));
+
+      const colorOptions: FilterOption[] = Array.from(
+        new Set(allItems.flatMap((item) => item.color || []))
+      ).map((color) => ({ value: color, label: toStartCase(color) }));
+
+      const styleOptions: FilterOption[] = Array.from(
+        new Set(allItems.flatMap((item) => item.style || []))
+      ).map((style) => ({ value: style, label: toStartCase(style) }));
+
+      // Prepend the "All Categories", "All Colors", "All Styles" options
+      categoryOptions.unshift({ value: "", label: "All Categories" });
+      colorOptions.unshift({ value: "", label: "All Colors" });
+      styleOptions.unshift({ value: "", label: "All Styles" });
+
+      return NextResponse.json({
+        categoryOptions,
+        colorOptions,
+        styleOptions,
+      });
     } else if (method === "query") {
       let { query, filter } = data;
       let topK = query?.length || 5;
@@ -136,8 +183,10 @@ export async function POST(request: Request) {
           { status: 400 }
         );
       }
-    } else if (method === "fetchWardrobeEmbeddings") {
-      let { query: originalQuery, topK = 3 } = data; // Get the original query
+    } 
+    else if (method === "fetchWardrobeEmbeddings") {
+      let { query: originalQuery } = data; // Get the original query
+      let topK = originalQuery.length || 3;
 
       let queryToSend = originalQuery; // Create a new variable to work with
       if (!queryToSend || queryToSend.trim() === "") {

@@ -1,14 +1,28 @@
 // Home.tsx
 "use client";
-import { useState } from "react";
-import { Box, Stack } from "@mui/material"; // Add Stack for vertical layout
+import { useEffect, useState } from "react";
+import { Box } from "@mui/material"; // Add Stack for vertical layout
 import VideoOnboard from "./onboard/page";
-import Pinecone from "./pinecone/page";
-import Chat from "./chat/page";
-import { ChatIcon } from "@/client/components/chatIcon";
+import { useDispatch } from "react-redux";
+import { setSessionId } from "@/lib/features/user-profile/userProfileSlice";
 
 export default function Home() {
+  const dispatch = useDispatch();
+
   const [isChatOpen, setIsChatOpen] = useState(false);
+
+
+
+  useEffect(() => {
+    const storedSessionId = localStorage.getItem("sessionId");
+    if (storedSessionId) {
+      dispatch(setSessionId(storedSessionId));
+    } else {
+      const newSessionId = crypto.randomUUID();
+      localStorage.setItem("sessionId", newSessionId);
+      dispatch(setSessionId(newSessionId));
+    }
+  }, [dispatch]);
 
   const toggleChatOpen = () => {
     setIsChatOpen((prevIsChatOpen) => !prevIsChatOpen);
@@ -18,8 +32,6 @@ export default function Home() {
     <Box>
       <VideoOnboard />
       {/* <Pinecone /> */}
-
-     
     </Box>
   );
 }

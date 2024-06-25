@@ -9,6 +9,7 @@ interface UserProfileState {
   vacation: string;
   isLoading: boolean;
   error: string | null;
+  sessionId: string | null;
 }
 
 const initialState: UserProfileState = {
@@ -18,6 +19,7 @@ const initialState: UserProfileState = {
   vacation: "",
   isLoading: false,
   error: null,
+  sessionId: null,
 };
 
 export const userProfileSlice = createSlice({
@@ -45,6 +47,10 @@ export const userProfileSlice = createSlice({
     setError: (state, action: PayloadAction<string | null>) => {
       state.error = action.payload;
     },
+
+    setSessionId: (state, action: PayloadAction<string | null>) => {
+      state.sessionId = action.payload;
+    },
   },
 });
 
@@ -55,5 +61,6 @@ export const {
   setVacation,
   setLoading,
   setError,
+  setSessionId,
 } = userProfileSlice.actions;
 export default userProfileSlice.reducer;

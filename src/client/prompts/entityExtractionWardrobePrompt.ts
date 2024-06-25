@@ -104,7 +104,12 @@ export const entityExtractionWardrobePrompt = async (
       },
       {
         role: "user",
-        content: `Please parse the following wardrobe data into a valid JSON array of ClothingItem or AccessoryItem objects (without any introductory text):
+        content: `You are a helpful assistant that parses clothing item data into a valid JSON array of ClothingItem or AccessoryItem objects. Follow these rules strictly:
+
+1. Only extract the attributes defined in the type definitions.
+2. If a value for any of the attributes is missing or unknown, fill it in with the string 'Unknown'.
+3. If you are uncertain about the value of any attribute, err on the side of providing a default or general value that best fits the description rather than leaving it blank.
+4. Do not include any additional text or commentary in your response; just the JSON array itself.:
       
       ${response}
       

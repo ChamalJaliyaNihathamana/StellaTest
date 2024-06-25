@@ -1,6 +1,10 @@
 "use client";
 import { useEffect, useState } from "react";
-import { AccessoryItem, ClothingItem } from "../api/pinecone/types";
+import {
+  AccessoryItem,
+  ClothingItem,
+  FilterOption,
+} from "../api/pinecone/types";
 import {
   Box,
   Typography,
@@ -23,6 +27,13 @@ import { setExistingWardrobe } from "@/lib/features/user-profile/userProfileSlic
 
 const MyCloset: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
+  const sessionId = useSelector(
+    (state: RootState) => state.userProfile.sessionId
+  );
+
+  const [categoryOptions, setCategoryOptions] = useState<FilterOption[]>([]);
+  const [colorOptions, setColorOptions] = useState<FilterOption[]>([]);
+  const [styleOptions, setStyleOptions] = useState<FilterOption[]>([]);
 
   const [results, setResults] = useState<PineconeResult | null>(null);
   const [filteredItems, setFilteredItems] = useState<
@@ -42,52 +53,69 @@ const MyCloset: React.FC = () => {
     (state: RootState) => state.userProfile
   );
   useEffect(() => {
-    const fetchWardrobeData = async () => {
-      setIsLoading(true);
-      setError(null);
+    const fetchData = async () => {
+      if (sessionId) {
+        setIsLoading(true);
+        setError(null);
 
-      try {
-        const response = await fetch("/api/pinecone", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            method: "query",
-            data: {
-              query: "Describe the user's existing wardrobe",
-            },
-          }),
-        });
+        try {
+          // Fetch both wardrobe data and filter options in a single request
+          const response = await fetch("/api/pinecone", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              method: "query", // First method: query for wardrobe data
+              data: {
+                query: "Describe the user's existing wardrobe",
+              },
+              sessionId: sessionId,
+            }),
+          });
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          const errorMessage =
-            errorData?.error || "Error fetching wardrobe data";
-          throw new Error(errorMessage);
+          if (response.ok) {
+            const wardrobeData: PineconeResult = await response.json();
+            const wardrobeItems = wardrobeData.matches.map(
+              (match) => match.metadata as ClothingItem | AccessoryItem
+            );
+            dispatch(setExistingWardrobe(wardrobeItems));
+            setFilteredItems(wardrobeItems);
+            setResults(wardrobeData);
+          } else {
+            throw new Error("Error fetching wardrobe data");
+          }
+
+          // Fetch filter options in the same effect block
+          const filterResponse = await fetch("/api/pinecone", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              method: "fetchFilterOptions",
+              sessionId: sessionId,
+            }),
+          });
+
+          if (filterResponse.ok) {
+            const filterOptionsData = await filterResponse.json();
+            setCategoryOptions(filterOptionsData.categoryOptions);
+            setColorOptions(filterOptionsData.colorOptions);
+            setStyleOptions(filterOptionsData.styleOptions);
+          } else {
+            throw new Error("Error fetching filter options");
+          }
+        } catch (err: any) {
+          setError(
+            err.message ||
+              "An error occurred while fetching data from Pinecone."
+          );
+          console.error("Error details:", err);
+        } finally {
+          setIsLoading(false);
         }
-
-        const data: PineconeResult = await response.json();
-        console.log("Fetched Pinecone data:", data);
-
-        // Extract ClothingItem or AccessoryItem objects from metadata
-        const wardrobeItems = data.matches.map(
-          (match) => match.metadata as ClothingItem | AccessoryItem
-        );
-
-        dispatch(setExistingWardrobe(wardrobeItems)); // Update Redux
-        setFilteredItems(wardrobeItems);
-        setResults(data); // Update component state for initial display
-      } catch (err: any) {
-        setError(
-          err.message || "An error occurred while fetching wardrobe data."
-        );
-        console.error("Error details:", err);
-      } finally {
-        setIsLoading(false);
       }
     };
 
-    fetchWardrobeData();
-  }, [dispatch]);
+    fetchData(); // Call the function to fetch data
+  }, [dispatch, sessionId]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault(); // Prevent default form submission
@@ -120,6 +148,7 @@ const MyCloset: React.FC = () => {
               query: query ? query : "Describe the user's existing wardrobe",
               filter: pineconeFilters,
             },
+            sessionId: sessionId,
           }),
         });
 
@@ -151,31 +180,6 @@ const MyCloset: React.FC = () => {
   const handleFilterChange = (field: string, value: string) => {
     setFilters((prevFilters) => ({ ...prevFilters, [field]: value }));
   };
-
-  // Options for the filters
-  const categoryOptions = [
-    { value: "", label: "All Categories" },
-    { value: "clothing", label: "Clothing" },
-    { value: "accessory", label: "Accessory" },
-  ];
-
-  const colorOptions = [
-    { value: "", label: "All Colors" },
-    { value: "red", label: "Red" },
-    { value: "blue", label: "Blue" },
-    { value: "green", label: "Green" },
-    { value: "cream", label: "Cream" },
-    // ... add more colors as needed
-  ];
-
-  const styleOptions = [
-    { value: "", label: "All Styles" },
-    { value: "casual", label: "Casual" },
-    { value: "formal", label: "Formal" },
-    { value: "sporty", label: "Sporty" },
-    { value: "elegant", label: "Elegant" },
-    // ... add more styles as needed
-  ];
 
   return (
     <Container maxWidth="md">
@@ -285,8 +289,8 @@ const MyCloset: React.FC = () => {
                       sx={{
                         px: 2,
                         py: 1,
-                        borderBottom: '1px solid lightgray',
-                        pr: 4,  // Add extra padding to the right
+                        borderBottom: "1px solid lightgray",
+                        pr: 4, // Add extra padding to the right
                       }}
                     >
                       <Typography
